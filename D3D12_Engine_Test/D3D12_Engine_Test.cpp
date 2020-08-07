@@ -486,13 +486,11 @@ bool InitD3D()
 	BF_PS->SetShaders(&basic_VS, &BS_shader);
 	BF_PS->Create(graphicsDevice, inputLayout, (int)sizeof(inputLayout), BF_RS, D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE);
 
-
-
-
 	graphicsDevice->commandList->CloseAndExecute(graphicsDevice->commandQueue);
 	graphicsDevice->fences[graphicsDevice->frameIndex].fenceValue++;
 	d3d_call(graphicsDevice->commandQueue->commandQueue->Signal(graphicsDevice->fences[graphicsDevice->frameIndex].fence, graphicsDevice->fences[graphicsDevice->frameIndex].fenceValue));
 
+    
 
 	// Initialize other variables
 	viewport = { 0.f, 0.f, (float)Width, (float)Height, 0.0f, 1.0f };
@@ -500,7 +498,7 @@ bool InitD3D()
 	cameraUp = XMFLOAT4(0.0f, 1.0f, 0.0f, 0.0f);
 	XMMATRIX tmpMat = XMMatrixPerspectiveFovLH(45.0f*(3.14f / 180.0f), (float)Width / (float)Height, 0.001f, 1000.0f);
 	XMStoreFloat4x4(&cameraProjMat, tmpMat);
-
+    
     return true;
 }
 
@@ -821,7 +819,8 @@ void UpdatePipeline()
 	graphicsDevice->commandList->commandList->CopyResource(graphicsDevice->backBuffer->renderTargets[graphicsDevice->frameIndex], outputtex_CS->buffer);
 	graphicsDevice->commandList->commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(graphicsDevice->backBuffer->renderTargets[graphicsDevice->frameIndex], D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_PRESENT));
 
-
+    
+    
     
 
     bool hh = graphicsDevice->commandList->CloseAndExecute(graphicsDevice->commandQueue);

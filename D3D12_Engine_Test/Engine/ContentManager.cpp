@@ -21,6 +21,7 @@ Texture2D* ContentManager::LoadTexture2D(LPCWSTR location)
 
 	Texture2D* newtex = new Texture2D();
 	Texture2D* dsa = new Texture2D();
+	
 }
 
 
