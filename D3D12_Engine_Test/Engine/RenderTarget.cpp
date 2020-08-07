@@ -16,25 +16,25 @@ bool RenderTarget::Create(GraphicsDevice* device, int width, int height, Descrip
     Width = width;
     Height = height;
 
-	renderTargets = new ID3D12Resource*[device->frameBufferCount];
+    renderTargets = new ID3D12Resource * [device->frameBufferCount];
 
-	CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(descriptorHeap->descriptorHeap->GetCPUDescriptorHandleForHeapStart());
+    CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(descriptorHeap->descriptorHeap->GetCPUDescriptorHandleForHeapStart());
 
-	// Create a RTV for each buffer (double buffering is two buffers, tripple buffering is 3).
-	for (int i = 0; i < device->frameBufferCount; i++)
-	{
-		// first we get the n'th buffer in the swap chain and store it in the n'th
-		// position of our ID3D12Resource array
-		hr = device->swapChain->swapChain->GetBuffer(i, IID_PPV_ARGS(&renderTargets[i]));
-		if (FAILED(hr))
-			return false;
-        
-		// the we "create" a render target view which binds the swap chain buffer (ID3D12Resource[n]) to the rtv handle
-		device->device->CreateRenderTargetView(renderTargets[i], nullptr, rtvHandle);
+    // Create a RTV for each buffer (double buffering is two buffers, tripple buffering is 3).
+    for (int i = 0; i < device->frameBufferCount; i++)
+    {
+        // first we get the n'th buffer in the swap chain and store it in the n'th
+        // position of our ID3D12Resource array
+        hr = device->swapChain->swapChain->GetBuffer(i, IID_PPV_ARGS(&renderTargets[i]));
+        if (FAILED(hr))
+            return false;
 
-		// we increment the rtv handle by the rtv descriptor size we got above
-		rtvHandle.Offset(1, descriptorHeap->descriptorSize);
-	}
+        // the we "create" a render target view which binds the swap chain buffer (ID3D12Resource[n]) to the rtv handle
+        device->device->CreateRenderTargetView(renderTargets[i], nullptr, rtvHandle);
+
+        // we increment the rtv handle by the rtv descriptor size we got above
+        rtvHandle.Offset(1, descriptorHeap->descriptorSize);
+    }
 
 
 
@@ -62,6 +62,6 @@ bool RenderTarget::Create(GraphicsDevice* device, int width, int height, Descrip
 
     device->device->CreateDepthStencilView(depthStencilBuffer, &depthStencilDesc, dsHeap->descriptorHeap->GetCPUDescriptorHandleForHeapStart());
 
-    
-	return true;
+
+    return true;
 }
