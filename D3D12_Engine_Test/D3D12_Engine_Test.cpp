@@ -822,7 +822,7 @@ void UpdatePipeline()
 	graphicsDevice->commandList->commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(graphicsDevice->backBuffer->renderTargets[graphicsDevice->frameIndex], D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_PRESENT));
 
 
-
+    
 
     bool hh = graphicsDevice->commandList->CloseAndExecute(graphicsDevice->commandQueue);
 
