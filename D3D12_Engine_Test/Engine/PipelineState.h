@@ -11,18 +11,18 @@ using namespace std;
 class PipelineState
 {
 public:
-    ID3D12PipelineState* pipelineState;
+	ID3D12PipelineState* pipelineState;
 	Shader* PS, *VS;
 	vector<DXGI_FORMAT> rtv_formats;
 
 private:
-    HRESULT hr;
+	HRESULT hr;
 
 public:
-    PipelineState();
+	PipelineState();
 	bool SetShaders(Shader* vs, Shader* ps);
 	bool AddRTV(DXGI_FORMAT format);
-    bool Create(GraphicsDevice*, D3D12_GRAPHICS_PIPELINE_STATE_DESC desc);
+	bool Create(GraphicsDevice*, D3D12_GRAPHICS_PIPELINE_STATE_DESC desc);
 	bool Create(GraphicsDevice* device, D3D12_INPUT_ELEMENT_DESC* IE_desc, int IE_desc_size, DXR_RootSignature* RS, D3D12_PRIMITIVE_TOPOLOGY_TYPE top_type);
 };
 

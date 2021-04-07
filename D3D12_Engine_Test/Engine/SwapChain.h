@@ -8,7 +8,7 @@ class SwapChain
 {
 public:
 	IDXGISwapChain3* swapChain;
-    DXGI_SAMPLE_DESC sampleDesc;
+	DXGI_SAMPLE_DESC sampleDesc;
 
 private:
 	HRESULT hr;

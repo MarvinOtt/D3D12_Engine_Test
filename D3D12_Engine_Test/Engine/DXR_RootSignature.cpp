@@ -3,51 +3,51 @@
 
 bool DXR_RootSignature::AddRP_CBV(int ShaderRegister)
 {
-    D3D12_ROOT_PARAMETER newRP = {};
-    newRP.ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
-    newRP.Descriptor.RegisterSpace = 0;
-    newRP.Descriptor.ShaderRegister = ShaderRegister;
-    rootParams.push_back(newRP);
-    return true;
+	D3D12_ROOT_PARAMETER newRP = {};
+	newRP.ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+	newRP.Descriptor.RegisterSpace = 0;
+	newRP.Descriptor.ShaderRegister = ShaderRegister;
+	rootParams.push_back(newRP);
+	return true;
 }
 
 bool DXR_RootSignature::AddRP_SRV(int ShaderRegister)
 {
-    D3D12_ROOT_PARAMETER newRP = {};
-    newRP.ParameterType = D3D12_ROOT_PARAMETER_TYPE_SRV;
-    newRP.Descriptor.RegisterSpace = 0;
-    newRP.Descriptor.ShaderRegister = ShaderRegister;
-    rootParams.push_back(newRP);
-    return true;
+	D3D12_ROOT_PARAMETER newRP = {};
+	newRP.ParameterType = D3D12_ROOT_PARAMETER_TYPE_SRV;
+	newRP.Descriptor.RegisterSpace = 0;
+	newRP.Descriptor.ShaderRegister = ShaderRegister;
+	rootParams.push_back(newRP);
+	return true;
 }
 
 bool DXR_RootSignature::AddRP_UAV(int ShaderRegister)
 {
-    D3D12_ROOT_PARAMETER newRP = {};
-    newRP.ParameterType = D3D12_ROOT_PARAMETER_TYPE_UAV;
-    newRP.Descriptor.RegisterSpace = 0;
-    newRP.Descriptor.ShaderRegister = ShaderRegister;
-    rootParams.push_back(newRP);
-    return true;
+	D3D12_ROOT_PARAMETER newRP = {};
+	newRP.ParameterType = D3D12_ROOT_PARAMETER_TYPE_UAV;
+	newRP.Descriptor.RegisterSpace = 0;
+	newRP.Descriptor.ShaderRegister = ShaderRegister;
+	rootParams.push_back(newRP);
+	return true;
 }
 
 bool DXR_RootSignature::AddRP_DescriptorTable(vector<DescriptorRange> descriptorTables)
 {
-    D3D12_DESCRIPTOR_RANGE* newRanges = new D3D12_DESCRIPTOR_RANGE[descriptorTables.size()];
-    for (int i = 0; i < descriptorTables.size(); ++i)
-    {
-        newRanges[i].RangeType = descriptorTables[i].RangeType;
-        newRanges[i].NumDescriptors = descriptorTables[i].NumDescriptors;
-        newRanges[i].OffsetInDescriptorsFromTableStart = descriptorTables[i].Offset;
-        newRanges[i].BaseShaderRegister = descriptorTables[i].BaseShaderRegister;
-        newRanges[i].RegisterSpace = descriptorTables[i].RegisterSpace;
-    }
-    D3D12_ROOT_PARAMETER newRP = {};
-    newRP.ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
-    newRP.DescriptorTable.NumDescriptorRanges = descriptorTables.size();
-    newRP.DescriptorTable.pDescriptorRanges = newRanges;
-    rootParams.push_back(newRP);
-    return true;
+	D3D12_DESCRIPTOR_RANGE* newRanges = new D3D12_DESCRIPTOR_RANGE[descriptorTables.size()];
+	for (int i = 0; i < descriptorTables.size(); ++i)
+	{
+		newRanges[i].RangeType = descriptorTables[i].RangeType;
+		newRanges[i].NumDescriptors = descriptorTables[i].NumDescriptors;
+		newRanges[i].OffsetInDescriptorsFromTableStart = descriptorTables[i].Offset;
+		newRanges[i].BaseShaderRegister = descriptorTables[i].BaseShaderRegister;
+		newRanges[i].RegisterSpace = descriptorTables[i].RegisterSpace;
+	}
+	D3D12_ROOT_PARAMETER newRP = {};
+	newRP.ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+	newRP.DescriptorTable.NumDescriptorRanges = descriptorTables.size();
+	newRP.DescriptorTable.pDescriptorRanges = newRanges;
+	rootParams.push_back(newRP);
+	return true;
 }
 
 bool DXR_RootSignature::Add_Sampler(D3D12_FILTER filter, D3D12_TEXTURE_ADDRESS_MODE uvw_mode, int reg)
@@ -72,26 +72,26 @@ bool DXR_RootSignature::Add_Sampler(D3D12_FILTER filter, D3D12_TEXTURE_ADDRESS_M
 
 bool DXR_RootSignature::Create()
 {
-    RS_desc = {};
-    RS_desc.NumParameters = rootParams.size();
-    RS_desc.pParameters = rootParams.data();
-    RS_desc.Flags = D3D12_ROOT_SIGNATURE_FLAG_LOCAL_ROOT_SIGNATURE;
+	RS_desc = {};
+	RS_desc.NumParameters = rootParams.size();
+	RS_desc.pParameters = rootParams.data();
+	RS_desc.Flags = D3D12_ROOT_SIGNATURE_FLAG_LOCAL_ROOT_SIGNATURE;
 	RS_desc.NumStaticSamplers = samplers.size();
 	RS_desc.pStaticSamplers = samplers.data();
 
-    return true;
+	return true;
 }
 
 bool DXR_RootSignature::CreateWithFlags(D3D12_ROOT_SIGNATURE_FLAGS flags)
 {
-    RS_desc = {};
-    RS_desc.NumParameters = rootParams.size();
-    RS_desc.pParameters = rootParams.data();
-    RS_desc.Flags = flags;
+	RS_desc = {};
+	RS_desc.NumParameters = rootParams.size();
+	RS_desc.pParameters = rootParams.data();
+	RS_desc.Flags = flags;
 	RS_desc.NumStaticSamplers = samplers.size();
 	RS_desc.pStaticSamplers = samplers.data();
 
-    return true;
+	return true;
 }
 
 bool DXR_RootSignature::Build(GraphicsDevice* device)

@@ -10,7 +10,7 @@ DescriptorHeap::DescriptorHeap()
 DescriptorHeap::DescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE type, D3D12_DESCRIPTOR_HEAP_FLAGS flags)
 {
 	descriptorType = type;
-    descriptorFlags = flags;
+	descriptorFlags = flags;
 }
 
 bool DescriptorHeap::Create(GraphicsDevice* device, int num)	
@@ -37,25 +37,25 @@ bool DescriptorHeap::Create(GraphicsDevice* device, int num)
 
 bool DescriptorHeap::SetTexture2D(Texture2D* tex, int index)
 {
-    if (descriptorType != D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV)
-        return false;
+	if (descriptorType != D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV)
+		return false;
 
-    D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
-    uavDesc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2D;
+	D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
+	uavDesc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2D;
 
-    D3D12_CPU_DESCRIPTOR_HANDLE Handle = descriptorHeap->GetCPUDescriptorHandleForHeapStart();
-    Handle.ptr += device->device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV) * index;
-    device->device->CreateUnorderedAccessView(tex->buffer, nullptr, &uavDesc, Handle);
-    return true;
+	D3D12_CPU_DESCRIPTOR_HANDLE Handle = descriptorHeap->GetCPUDescriptorHandleForHeapStart();
+	Handle.ptr += device->device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV) * index;
+	device->device->CreateUnorderedAccessView(tex->buffer, nullptr, &uavDesc, Handle);
+	return true;
 }
 
 bool DescriptorHeap::SetSRV(D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc, int index)
 {
-    if (descriptorType != D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV)
-        return false;
+	if (descriptorType != D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV)
+		return false;
 
-    D3D12_CPU_DESCRIPTOR_HANDLE srvHandle = descriptorHeap->GetCPUDescriptorHandleForHeapStart();
-    srvHandle.ptr += device->device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV) * index;
-    device->device->CreateShaderResourceView(nullptr, &srvDesc, srvHandle);
-    return true;
+	D3D12_CPU_DESCRIPTOR_HANDLE srvHandle = descriptorHeap->GetCPUDescriptorHandleForHeapStart();
+	srvHandle.ptr += device->device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV) * index;
+	device->device->CreateShaderResourceView(nullptr, &srvDesc, srvHandle);
+	return true;
 }

@@ -27,10 +27,10 @@ bool SwapChain::Create(GraphicsDevice* device, CommandQueue* commandQueue)
 	swapChainDesc.OutputWindow = device->hwnd; // handle to our window
 	swapChainDesc.SampleDesc = sampleDesc; // our multi-sampling description
 	swapChainDesc.Windowed = true; // set to true, then if in fullscreen must call SetFullScreenState with true for full screen to get uncapped fps
-    //swapChainDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	//swapChainDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
 
 	IDXGISwapChain* tempSwapChain;
-    //hr = device->dxgiFactory->CreateSwapChainForHwnd(commandQueue->commandQueue, device->hwnd, &swapChainDesc, nullptr, nullptr, &tempSwapChain);
+	//hr = device->dxgiFactory->CreateSwapChainForHwnd(commandQueue->commandQueue, device->hwnd, &swapChainDesc, nullptr, nullptr, &tempSwapChain);
 	hr = device->dxgiFactory->CreateSwapChain(
 		commandQueue->commandQueue, // the queue will be flushed once the swap chain is created
 		&swapChainDesc, // give it the swap chain description we created above
@@ -38,7 +38,7 @@ bool SwapChain::Create(GraphicsDevice* device, CommandQueue* commandQueue)
 	);
 	if (FAILED(hr))
 		return false;
-    d3d_call(tempSwapChain->QueryInterface(IID_PPV_ARGS(&swapChain)));
+	d3d_call(tempSwapChain->QueryInterface(IID_PPV_ARGS(&swapChain)));
 	//swapChain = static_cast<IDXGISwapChain3*>(tempSwapChain);
 	return true;
 }

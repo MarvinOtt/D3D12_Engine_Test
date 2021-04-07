@@ -27,12 +27,12 @@ bool PipelineState::AddRTV(DXGI_FORMAT format)
 
 bool PipelineState::Create(GraphicsDevice* device, D3D12_GRAPHICS_PIPELINE_STATE_DESC desc)
 {
-    // create the pso
-    hr = device->device->CreateGraphicsPipelineState(&desc, IID_PPV_ARGS(&pipelineState));
-    if (FAILED(hr))
-        return false;
+	// create the pso
+	hr = device->device->CreateGraphicsPipelineState(&desc, IID_PPV_ARGS(&pipelineState));
+	if (FAILED(hr))
+		return false;
 
-    return true;
+	return true;
 }
 
 bool PipelineState::Create(GraphicsDevice* device, D3D12_INPUT_ELEMENT_DESC* IE_desc, int IE_desc_size, DXR_RootSignature* RS, D3D12_PRIMITIVE_TOPOLOGY_TYPE top_type)

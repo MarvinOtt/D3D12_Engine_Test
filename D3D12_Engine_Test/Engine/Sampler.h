@@ -7,7 +7,7 @@ class Sampler
 {
 public:
 	D3D12_STATIC_SAMPLER_DESC sampler;
-    
+	
 private:
 	HRESULT hr;
 

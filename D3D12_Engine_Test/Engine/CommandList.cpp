@@ -24,13 +24,13 @@ bool CommandList::Reset(CommandAllocator* commandAllocator, PipelineState* pso)
 
 bool CommandList::CloseAndExecute(CommandQueue* queue)
 {
-    hr = commandList->Close();
-    if (FAILED(hr))
-        return false;
-    ID3D12CommandList* ppCommandLists[] = { commandList };
-    queue->commandQueue->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
+	hr = commandList->Close();
+	if (FAILED(hr))
+		return false;
+	ID3D12CommandList* ppCommandLists[] = { commandList };
+	queue->commandQueue->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
 
-    return true;
+	return true;
 }
 
 bool CommandList::ResourceBarrierTransition(D3D12_RESOURCE_STATES oldstate, D3D12_RESOURCE_STATES newstate, std::vector<ID3D12Resource*> resources)

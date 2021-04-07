@@ -15,23 +15,23 @@ class DXR_ACS_OBJ;
 class DXR_ACS_TOP
 {
 public:
-    vector<DXR_ACS_OBJ*> ACS_OBJ_buffers;
+	vector<DXR_ACS_OBJ*> ACS_OBJ_buffers;
 	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc;
-    bool HasBeenBuilt;
-    int numberOfRays;
+	bool HasBeenBuilt;
+	int numberOfRays;
 
 	Buffer* pResult;
 	Buffer* pInstanceDesc;
 
 private:
-    HRESULT hr;
+	HRESULT hr;
 	Buffer* pScratch;
 
 public:
-    DXR_ACS_TOP(int numberOfRays2);
-    bool Add_ACS_OBJ(DXR_ACS_OBJ* acs);
+	DXR_ACS_TOP(int numberOfRays2);
+	bool Add_ACS_OBJ(DXR_ACS_OBJ* acs);
 	bool Add_ACS_OBJ_multiple(DXR_ACS_OBJ** acs, int size);
-    bool Build(GraphicsDevice*);
-    bool Update(GraphicsDevice*);
+	bool Build(GraphicsDevice*);
+	bool Update(GraphicsDevice*);
 };
 

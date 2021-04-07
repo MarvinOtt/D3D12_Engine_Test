@@ -10,14 +10,14 @@ class RenderTarget
 public:
 	DescriptorHeap* descriptorHeap;
 	ID3D12Resource** renderTargets;
-    ID3D12Resource* depthStencilBuffer;
-    int Width, Height;
+	ID3D12Resource* depthStencilBuffer;
+	int Width, Height;
 
 private:
 	HRESULT hr;
 
 public:
-    RenderTarget();
+	RenderTarget();
 	RenderTarget(DescriptorHeap* descHeap);
 	bool Create(GraphicsDevice*, int, int, DescriptorHeap*);
 };

@@ -36,18 +36,18 @@ bool RootSignature::Create(GraphicsDevice* device, D3D12_STATIC_SAMPLER_DESC sam
 
 bool RootSignature::Create(GraphicsDevice* device, D3D12_ROOT_SIGNATURE_DESC desc)
 {
-    ID3DBlob* errorBuff; // a buffer holding the error data if any
-    ID3DBlob* signature;
-    hr = D3D12SerializeRootSignature(&desc, D3D_ROOT_SIGNATURE_VERSION_1, &signature, &errorBuff);
-    if (FAILED(hr))
-    {
-        OutputDebugStringA((char*)errorBuff->GetBufferPointer());
-        return false;
-    }
+	ID3DBlob* errorBuff; // a buffer holding the error data if any
+	ID3DBlob* signature;
+	hr = D3D12SerializeRootSignature(&desc, D3D_ROOT_SIGNATURE_VERSION_1, &signature, &errorBuff);
+	if (FAILED(hr))
+	{
+		OutputDebugStringA((char*)errorBuff->GetBufferPointer());
+		return false;
+	}
 
-    hr = device->device->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(), IID_PPV_ARGS(&rootSignature));
-    if (FAILED(hr))
-        return false;
+	hr = device->device->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(), IID_PPV_ARGS(&rootSignature));
+	if (FAILED(hr))
+		return false;
 
-    return true;
+	return true;
 }

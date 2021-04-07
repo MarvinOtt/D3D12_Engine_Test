@@ -57,21 +57,21 @@ struct Vertex_Pos {
 };
 
 struct CameraMatrix {
-    XMFLOAT4 offset;
-    XMFLOAT4X4 rot;
-    uint32_t counter;
+	XMFLOAT4 offset;
+	XMFLOAT4X4 rot;
+	uint32_t counter;
 };
 
 struct CS_camera {
-    XMFLOAT4 offset;
-    XMFLOAT4X4 rot;
-    XMFLOAT4 oldoffset;
-    XMFLOAT4X4 oldrot_inv;
-    XMFLOAT4X4 oldrot;
+	XMFLOAT4 offset;
+	XMFLOAT4X4 rot;
+	XMFLOAT4 oldoffset;
+	XMFLOAT4X4 oldrot_inv;
+	XMFLOAT4X4 oldrot;
 };
 
 struct ObjectMatrix {
-    mat4 mat;
+	mat4 mat;
 };
 
 // Handle to the window
@@ -94,8 +94,8 @@ Window* mainWindow;
 
 // create a window
 bool InitializeWindow(HINSTANCE hInstance,
-    int ShowWnd,
-    bool fullscreen);
+	int ShowWnd,
+	bool fullscreen);
 
 // main application loop
 void mainloop();
@@ -104,9 +104,9 @@ void DetectInput(double time);
 
 // callback function for windows messages
 LRESULT CALLBACK WndProc(HWND hWnd,
-    UINT msg,
-    WPARAM wParam,
-    LPARAM lParam);
+	UINT msg,
+	WPARAM wParam,
+	LPARAM lParam);
 
 // Input Stuff
 char* keyboardstate;
@@ -193,7 +193,7 @@ int counter = 0;
 
 
 typedef struct CubeColor {
-    DirectX::XMFLOAT4 colorMultiplier;
+	DirectX::XMFLOAT4 colorMultiplier;
 }CubeColor;
 
 CubeColor cbColorMultiplierData; // this is the constant buffer data we will send to the gpu 

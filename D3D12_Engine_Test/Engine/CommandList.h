@@ -14,12 +14,12 @@ template<typename T> class VertexBuffer;
 class CommandList
 {
 private:
-    using VoidDelegate = std::function<void()>;
+	using VoidDelegate = std::function<void()>;
 	GraphicsDevice* device;
 
 public:
 	ID3D12GraphicsCommandList4* commandList;
-    Event<VoidDelegate>* CommandListFinished = new Event<VoidDelegate>();
+	Event<VoidDelegate>* CommandListFinished = new Event<VoidDelegate>();
 
 private:
 	HRESULT hr;
@@ -27,7 +27,7 @@ private:
 public:
 	CommandList(GraphicsDevice* device, CommandAllocator* commandAllocator, D3D12_COMMAND_LIST_TYPE type, HRESULT& HR);
 	bool Reset(CommandAllocator*, PipelineState*);
-    bool CloseAndExecute(CommandQueue* queue);
+	bool CloseAndExecute(CommandQueue* queue);
 	bool ResourceBarrierTransition(D3D12_RESOURCE_STATES oldstate, D3D12_RESOURCE_STATES newstate, std::vector<ID3D12Resource*> resources);
 	bool ResourceBarrierTransition(D3D12_RESOURCE_STATES oldstate, D3D12_RESOURCE_STATES newstate, ID3D12Resource* resource);
 	bool SetViewPortScissorRect(D3D12_VIEWPORT viewport, D3D12_RECT scissorRect);
