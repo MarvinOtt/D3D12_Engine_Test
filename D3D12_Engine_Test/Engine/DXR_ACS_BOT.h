@@ -20,16 +20,15 @@ private:
     HRESULT hr;
 
 public:
-    DXR_ACS_BOT();
     template <typename T>
-    bool AddGeometry(VertexBuffer<T>* vertexBuffer);
+    DXR_ACS_BOT(GraphicsDevice* graphicsDevice, VertexBuffer<T>* vertexBuffer);
     template <typename T, typename U>
-    bool AddGeometryIndices(VertexBuffer<T>* vertexBuffer, IndexBuffer<U>* indexBuffer);
-    bool Build(GraphicsDevice*);
+    DXR_ACS_BOT(GraphicsDevice* graphicsDevice, VertexBuffer<T>* vertexBuffer, IndexBuffer<U>* indexBuffer);
+	bool Build(GraphicsDevice* graphicsDevice);
 };
 
 template <typename T>
-bool DXR_ACS_BOT::AddGeometry(VertexBuffer<T>* vertexBuffer)
+DXR_ACS_BOT::DXR_ACS_BOT(GraphicsDevice* graphicsDevice, VertexBuffer<T>* vertexBuffer)
 {
     D3D12_RAYTRACING_GEOMETRY_DESC newGeomDesc = {};
     newGeomDesc.Type = D3D12_RAYTRACING_GEOMETRY_TYPE_TRIANGLES;
@@ -41,11 +40,11 @@ bool DXR_ACS_BOT::AddGeometry(VertexBuffer<T>* vertexBuffer)
 
     geomDesc.push_back(newGeomDesc);
 
-    return true;
+	Build(graphicsDevice);
 }
 
 template <typename T, typename U>
-bool DXR_ACS_BOT::AddGeometryIndices(VertexBuffer<T>* vertexBuffer, IndexBuffer<U>* indexBuffer)
+DXR_ACS_BOT::DXR_ACS_BOT(GraphicsDevice* graphicsDevice, VertexBuffer<T>* vertexBuffer, IndexBuffer<U>* indexBuffer)
 {
     D3D12_RAYTRACING_GEOMETRY_DESC newGeomDesc = {};
     newGeomDesc.Type = D3D12_RAYTRACING_GEOMETRY_TYPE_TRIANGLES;
@@ -60,6 +59,6 @@ bool DXR_ACS_BOT::AddGeometryIndices(VertexBuffer<T>* vertexBuffer, IndexBuffer<
 
     geomDesc.push_back(newGeomDesc);
 
-    return true;
-} 
+	Build(graphicsDevice);
+}
 

@@ -135,6 +135,9 @@
     <ClInclude Include="d3dx12.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
+    <ClInclude Include="Engine\DXR_ACS_OBJ.h">
+      <Filter>Headerdateien\Engine</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="D3D12_Engine_Test.cpp">
@@ -221,6 +224,9 @@
     <ClCompile Include="Engine\ContentManager.cpp">
       <Filter>Quelldateien\Engine</Filter>
     </ClCompile>
+    <ClCompile Include="Engine\DXR_ACS_OBJ.cpp">
+      <Filter>Quelldateien\Engine</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="D3D12_Engine_Test.rc">
@@ -256,6 +262,11 @@
     <None Include="BilateralFilter.hlsl">
       <Filter>Ressourcendateien</Filter>
     </None>
-    <None Include="DXR_Shader.hlsl" />
+    <None Include="DXR_Shader.hlsl">
+      <Filter>Ressourcendateien</Filter>
+    </None>
+    <None Include="DXR_Shader_AO.hlsl">
+      <Filter>Ressourcendateien</Filter>
+    </None>
   </ItemGroup>
 </Project>

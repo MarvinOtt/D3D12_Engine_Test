@@ -1,7 +1,6 @@
 #pragma once
 #include <d3d12.h>
 #include <dxgi1_4.h>
-#include "d3dx12.h"
 #include "Framework.h"
 
 class CommandAllocator;
@@ -11,8 +10,6 @@ class Fence;
 class SwapChain;
 class DescriptorHeap;
 class RenderTarget;
-
-using namespace Microsoft::WRL;
 
 class GraphicsDevice
 {

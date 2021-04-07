@@ -1,7 +1,8 @@
 #pragma once
-#include <d3d12.h>
-#include <dxgi1_4.h>
-#include <DirectXMath.h>
+#include "d3dx12.h"
+#include "GraphicsDevice.h"
+#include "CommandList.h"
+
 class GraphicsDevice;
 
 template<typename T>
@@ -11,7 +12,7 @@ public:
     ID3D12Resource* buffer;
     D3D12_RESOURCE_DESC desc;
     D3D12_VERTEX_BUFFER_VIEW bufferView;
-    UINT64 bufferSize;
+    UINT bufferSize;
     int numVertices;
 
 private:
@@ -20,23 +21,21 @@ private:
 
 public:
     VertexBuffer();
-    bool Create(GraphicsDevice*, UINT64);
+    bool Create(GraphicsDevice*, UINT);
 	bool CreateFullScreen(GraphicsDevice*);
 
-    bool SetData(GraphicsDevice* device, T* vertices, int numvertices);
+    bool SetData(GraphicsDevice* device, T* vertices, int numvertices, D3D12_RESOURCE_STATES resourceState = D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
 
 };
-
-#include "GraphicsDevice.h"
-#include "CommandList.h"
 
 template<typename T>
 VertexBuffer<T>::VertexBuffer()
 {
 
 }
+
 template<typename T>
-bool VertexBuffer<T>::Create(GraphicsDevice* device, UINT64 buffersize)
+bool VertexBuffer<T>::Create(GraphicsDevice* device, UINT buffersize)
 {
     bufferSize = buffersize;
     // create default heap
@@ -59,7 +58,7 @@ bool VertexBuffer<T>::Create(GraphicsDevice* device, UINT64 buffersize)
 }
 
 template <typename T>
-bool VertexBuffer<T>::SetData(GraphicsDevice* device, T* vertices, int numvertices)
+bool VertexBuffer<T>::SetData(GraphicsDevice* device, T* vertices, int numvertices, D3D12_RESOURCE_STATES resourceState)
 {
     // create upload heap
     // upload heaps are used to upload data to the GPU. CPU can write to it, GPU can read from it
@@ -86,7 +85,7 @@ bool VertexBuffer<T>::SetData(GraphicsDevice* device, T* vertices, int numvertic
     UpdateSubresources(device->commandList->commandList, buffer, uploadheap, 0, 0, 1, &vertexData);
 
     // transition the vertex buffer data from copy destination state to vertex buffer state
-    device->commandList->commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(buffer, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER));
+    device->commandList->commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(buffer, D3D12_RESOURCE_STATE_COPY_DEST, resourceState));
 
     numVertices = numvertices;
     bufferView.BufferLocation = buffer->GetGPUVirtualAddress();

@@ -33,27 +33,53 @@ void main(float4 pos : SV_POSITION)
 	float finalAO = 0.f;
 
 	// Consts
-	float sigmaI = 1.5f;
-	float sigmaS = 30.0f;
-	float sigmaN = 10.f;
-	float sigmaD = 0.06f;
-
+	float sigmaI = 2.0f;
+	float sigmaS = 20.0f;
+	float sigmaN = 20.f;
+	float sigmaD = 0.1f * 1;
+	const float sigmaDD = 50.f;
+	 
 	float wP = 0;
-	int diameter = 60;
+	int diameter = 41;
 	int radius = diameter / 2;
 
 	int i = radius;
 
 	float AOxy = AOtex_OUT[xy].x;
-	for (int j = 0; j < diameter; j++)
+	float minStr = 1.f;
+	float curdistchange = 0.f;
+	for (int j = radius - 1; j >= 0; j--)
 	{
 		uint2 neighbor = uint2(xy.x, xy.y - (radius - j));
 		float AOn = AOtex_OUT[neighbor].x;
-		float gi = max(1.f - abs((AOn - AOxy) / sigmaI), 0.0f);
+		float gi = gaussian(AOn - AOxy, sigmaI); //max(1.f - abs((AOn - AOxy) / sigmaI), 0.0f);
 		float gs = gaussian(radius - j, sigmaS);
 		float gn = pow(getNormalSim(normaltex[xy].xyz, normaltex[neighbor].xyz), sigmaN);
 		float gd = max(1.f - abs((depthtex[xy].x - depthtex[neighbor].x) / (sigmaD - (1 / (1 + depthtex[xy].x * 0.7f)) * sigmaD * 0.9f)), 0.f);
-		float w = (gi * gs *gn * gd);
+		float newdistchange = (depthtex[xy].x - depthtex[neighbor].x);
+		if (j == radius - 1)
+			curdistchange = newdistchange;
+		minStr = min(minStr, 1.f / (1.f + abs(newdistchange - curdistchange) * sigmaDD));
+		curdistchange = newdistchange;
+		float w = (gi * gs * gn * gd) * minStr;
+		finalAO += AOn * w;
+		wP += w;
+	}
+	minStr = 1.f;
+	for (int j = radius; j < diameter; j++)
+	{
+		uint2 neighbor = uint2(xy.x, xy.y - (radius - j));
+		float AOn = AOtex_OUT[neighbor].x;
+		float gi = gaussian(AOn - AOxy, sigmaI); //max(1.f - abs((AOn - AOxy) / sigmaI), 0.0f);
+		float gs = gaussian(radius - j, sigmaS);
+		float gn = pow(getNormalSim(normaltex[xy].xyz, normaltex[neighbor].xyz), sigmaN);
+		float gd = max(1.f - abs((depthtex[xy].x - depthtex[neighbor].x) / (sigmaD - (1 / (1 + depthtex[xy].x * 0.7f)) * sigmaD * 0.9f)), 0.f);
+		float newdistchange = (depthtex[xy].x - depthtex[neighbor].x);
+		if (j == radius)
+			curdistchange = newdistchange;
+		minStr = min(minStr, 1.f / (1.f + abs(newdistchange - curdistchange) * sigmaDD));
+		curdistchange = newdistchange;
+		float w = (gi * gs * gn * gd) * minStr;
 		finalAO += AOn * w;
 		wP += w;
 	}

@@ -2,10 +2,17 @@
 #include "Texture2D.h"
 #include "DescriptorHeap.h"
 #include "CommandList.h"
+#include "d3dx12.h"
 
-Texture2D::Texture2D()
+Texture2D::Texture2D(LPCWSTR name)
 {
+	this->name = name;
+}
 
+Texture2D::Texture2D(LPCWSTR name, GraphicsDevice* device, DXGI_FORMAT format, int Width, int Height)
+{
+	this->name = name;
+	Create(device, format, Width, Height);
 }
 
 bool Texture2D::Create(GraphicsDevice* device, D3D12_RESOURCE_DESC Desc)

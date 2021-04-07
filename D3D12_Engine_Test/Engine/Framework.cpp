@@ -137,6 +137,15 @@ void d3dTraceHR(const std::string& msg, HRESULT hr)
     msgBox(error_msg);
 }
 
+std::string d3dGetErrMsg(HRESULT hr)
+{
+	char hr_msg[512];
+	FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM, nullptr, hr, 0, hr_msg, ARRAYSIZE(hr_msg), nullptr);
+
+	std::string error_msg = hr_msg;
+	return error_msg;
+}
+
 void Framework::run(Tutorial& tutorial, const std::string& winTitle, uint32_t width, uint32_t height)
 {
     gWinHandle = createWindow(winTitle, width, height);

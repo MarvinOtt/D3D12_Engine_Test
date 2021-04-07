@@ -311,7 +311,7 @@ bool DXR_PipelineState::Build(GraphicsDevice* device)
     }
 
     // Bind the payload size to the programs
-    ShaderConfig shaderConfig(sizeof(float) * 2, sizeof(float) * 9);
+    ShaderConfig shaderConfig(sizeof(float) * 2, sizeof(float) * 7);
     subobjects[index] = shaderConfig.subobject; // 9 Shader Config
 
     uint32_t shaderConfigIndex = index++; // 9

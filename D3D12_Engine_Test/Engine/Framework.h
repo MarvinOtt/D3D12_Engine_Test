@@ -97,6 +97,8 @@ static const uint32_t kDefaultSwapChainBuffers = 3;
 void msgBox(const std::string& msg);
 // Trace a d3d error and convert the result to a human-readable string
 void d3dTraceHR(const std::string& msg, HRESULT hr);
+
+std::string d3dGetErrMsg(HRESULT hr);
 // Convert a string to a wide-string
 std::wstring string_2_wstring(const std::string& s);
 // Convert a wide-string to a string

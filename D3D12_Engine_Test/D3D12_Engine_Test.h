@@ -22,10 +22,12 @@
 #include "happly.h"
 #include <sstream>
 #include <iomanip>
+#include <sstream>
+#include <fstream>
 
 #define PI 3.14159265359
 
-#include "Engine/glm/glm.hpp"
+//#include "Engine/glm/glm.hpp"
 
 using namespace glm;
 
@@ -37,8 +39,22 @@ using namespace DirectX; // we will be using the directxmath library
 // this will only call release if an object exists (prevents exceptions calling release on non existant objects)
 #define SAFE_RELEASE(p) { if ( (p) ) { (p)->Release(); (p) = 0; } }
 
-struct Vertex;
-struct Vertex_Pos;
+float degree2rad(float angle_in_degrees) {
+	return (float)(angle_in_degrees * (PI / 180.0f));
+}
+
+struct Vertex {
+	Vertex(float x, float y, float z, float r, float g, float b) : pos(x, y, z), color(r, g, b) {}
+	Vertex() : pos(0, 0, 0), color(0, 0, 0) {}
+	XMFLOAT3 pos;
+	XMFLOAT3 color;
+};
+
+struct Vertex_Pos {
+	Vertex_Pos(float x, float y, float z) : pos(x, y, z) {}
+	Vertex_Pos() : pos(0, 0, 0) {}
+	XMFLOAT3 pos;
+};
 
 struct CameraMatrix {
     XMFLOAT4 offset;
@@ -68,8 +84,8 @@ LPCTSTR WindowName = L"BzTutsApp";
 LPCTSTR WindowTitle = L"Bz Window";
 
 // width and height of the window
-int Width = 1920 / 1;
-int Height = 1080 / 1;
+int Width = 2560 / 1;
+int Height = 1440 / 1;
 
 // is window full screen?
 bool FullScreen = false;
@@ -83,7 +99,7 @@ bool InitializeWindow(HINSTANCE hInstance,
 
 // main application loop
 void mainloop();
-bool InitDirectInput(HINSTANCE hInstance);
+bool InitDirectInput();
 void DetectInput(double time);
 
 // callback function for windows messages
@@ -127,10 +143,10 @@ CS_camera CScamera;
 
 Texture2D* cubetex;
 uint64_t ACC_SIZE = 0;
-DXR_PipelineState* DXR_pipelineState;
-DXR_ShaderTable* DXR_shaderTable;
+DXR_PipelineState* DXR_COL_pipelineState, *DXR_AO_pipelineState;
+DXR_ShaderTable* DXR_COL_shadertable, *DXR_AO_shadertable;
  
-Texture2D* outputtex_RT, *outputAOtex_RT, *outputtex_CS, *posOutput, *oldposOutput, *AOtex_old, *AOtex_OUT, *normaltex, *AOtex_vertical;
+Texture2D* outputtex_RT, *outputAOtex_RT, *outputtex_CS, *posOutput, *oldposOutput, *AOtex_old, *AOtex_OUT, *normaltex, *AOtex_vertical, *AOtex_F, *TS_strength;
 
  
 
@@ -166,7 +182,9 @@ XMMATRIX oldrot;
 
 Buffer** CB_objectmatrices;
 
-DXR_ACS_BOT* ACS_cube, *ACS_plane;
+DXR_ACS_BOT* ACS_BOT_cube;
+DXR_ACS_OBJ* ACS_OBJ_plane;
+vector<DXR_ACS_OBJ*> ACS_OBJ_cubes;
 DXR_ACS_TOP* ACS_top;
 
 float cuberotation = 0;

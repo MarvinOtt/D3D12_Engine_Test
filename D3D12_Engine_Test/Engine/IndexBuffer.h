@@ -1,6 +1,8 @@
 #pragma once
 #include <d3d12.h>
 #include <dxgi1_4.h>
+#include "d3dx12.h"
+
 class GraphicsDevice;
 
 template<typename T>
@@ -10,7 +12,7 @@ public:
     ID3D12Resource* buffer;
     D3D12_RESOURCE_DESC desc;
     D3D12_INDEX_BUFFER_VIEW bufferView;
-    UINT64 bufferSize;
+    UINT bufferSize;
     int numIndices;
 
 private:
@@ -19,9 +21,9 @@ private:
 
 public:
     IndexBuffer();
-    bool Create(GraphicsDevice*, UINT64);
+    bool Create(GraphicsDevice*, UINT);
 
-    bool SetData(GraphicsDevice* device, T* vertices, int numindices);
+    bool SetData(GraphicsDevice* device, T* vertices, int numindices, D3D12_RESOURCE_STATES resourceState = D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
 
 };
 
@@ -34,7 +36,7 @@ IndexBuffer<T>::IndexBuffer()
 
 }
 template<typename T>
-bool IndexBuffer<T>::Create(GraphicsDevice* device, UINT64 buffersize)
+bool IndexBuffer<T>::Create(GraphicsDevice* device, UINT buffersize)
 {
     bufferSize = buffersize;
     // create default heap
@@ -57,7 +59,7 @@ bool IndexBuffer<T>::Create(GraphicsDevice* device, UINT64 buffersize)
 }
 
 template <typename T>
-bool IndexBuffer<T>::SetData(GraphicsDevice* device, T* vertices, int numindices)
+bool IndexBuffer<T>::SetData(GraphicsDevice* device, T* vertices, int numindices, D3D12_RESOURCE_STATES resourceState)
 {
     numIndices = numindices;
     // create upload heap
@@ -85,7 +87,7 @@ bool IndexBuffer<T>::SetData(GraphicsDevice* device, T* vertices, int numindices
     UpdateSubresources(device->commandList->commandList, buffer, uploadheap, 0, 0, 1, &vertexData);
 
     // transition the vertex buffer data from copy destination state to vertex buffer state
-    device->commandList->commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(buffer, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER));
+    device->commandList->commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(buffer, D3D12_RESOURCE_STATE_COPY_DEST, resourceState));
 
     bufferView.BufferLocation = buffer->GetGPUVirtualAddress();
     bufferView.Format = DXGI_FORMAT_R32_UINT;

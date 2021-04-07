@@ -23,7 +23,7 @@
     <ProjectGuid>{30B54060-FD4D-4823-B729-53C56790D4F3}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>D3D12EngineTest</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.17763.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -42,13 +42,13 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset>v141</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset>v141</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
@@ -100,13 +100,13 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
-      <PrecompiledHeader>
-      </PrecompiledHeader>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>false</ConformanceMode>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <SDLCheck>true</SDLCheck>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -149,6 +149,7 @@
       <PreprocessorDefinitions>NDEBUG;_WINDOWS;WIN32;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <MultiProcessorCompilation>false</MultiProcessorCompilation>
+      <DisableSpecificWarnings>4267</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -172,6 +173,7 @@
     <ClInclude Include="Engine\DescriptorHeap.h" />
     <ClInclude Include="Engine\DXR_ACS.h" />
     <ClInclude Include="Engine\DXR_ACS_BOT.h" />
+    <ClInclude Include="Engine\DXR_ACS_OBJ.h" />
     <ClInclude Include="Engine\DXR_ACS_TOP.h" />
     <ClInclude Include="Engine\DXR_PipelineState.h" />
     <ClInclude Include="Engine\DXR_RootSignature.h" />
@@ -209,6 +211,7 @@
     <ClCompile Include="Engine\DescriptorHeap.cpp" />
     <ClCompile Include="Engine\DXR_ACS.cpp" />
     <ClCompile Include="Engine\DXR_ACS_BOT.cpp" />
+    <ClCompile Include="Engine\DXR_ACS_OBJ.cpp" />
     <ClCompile Include="Engine\DXR_ACS_TOP.cpp" />
     <ClCompile Include="Engine\DXR_PipelineState.cpp" />
     <ClCompile Include="Engine\DXR_RootSignature.cpp" />
@@ -262,6 +265,9 @@
     <None Include="DXR_Shader.hlsl">
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <FileType>Document</FileType>
+    </None>
+    <None Include="DXR_Shader_AO.hlsl">
       <FileType>Document</FileType>
     </None>
     <FxCompile Include="PixelShader.hlsl">

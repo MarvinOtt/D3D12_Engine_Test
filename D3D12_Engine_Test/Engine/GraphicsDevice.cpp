@@ -7,6 +7,9 @@
 #include "Fence.h"
 #include "DescriptorHeap.h"
 #include "SwapChain.h"
+#include "d3dx12.h"
+
+using namespace Microsoft::WRL;
 
 GraphicsDevice::GraphicsDevice(HWND hwnd2, int Width, int Height)
 {
@@ -105,8 +108,7 @@ bool GraphicsDevice::Create()
     }
 
     // Command List
-    commandList = new CommandList();
-    commandList->Create(this, &commandAllocator[frameIndex], D3D12_COMMAND_LIST_TYPE_DIRECT);
+    commandList = new CommandList(this, &commandAllocator[frameIndex], D3D12_COMMAND_LIST_TYPE_DIRECT, hr);
 
     // Fences
     for (int i = 0; i < frameBufferCount; ++i)

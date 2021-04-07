@@ -9,6 +9,7 @@ class GraphicsDevice;
 class Buffer;
 class DXR_PipelineState;
 class DXR_ACS_TOP;
+class DXR_ACS_OBJ;
 
 class DXR_ShaderTable
 {
@@ -23,6 +24,7 @@ public:
     int rayGenData_count;
 
     UINT64** geomData;
+	LPCWSTR* geomHitGroup;
     int shaderTableEntrySize;
 
 private:
@@ -37,7 +39,7 @@ public:
     bool SetRayGenShader(LPCWSTR name, UINT64* data, int datasize);
     bool SetMissShader(int index, LPCWSTR name, UINT64* data, int datasize);
     bool Create(GraphicsDevice* device, DXR_PipelineState* pipelineState);
-    bool SetGeomData(int geomindex, int rayindex, UINT64* data);
+    bool SetGeomData(DXR_ACS_OBJ* geom, int rayindex, UINT64* data, LPCWSTR hitgroup);
     D3D12_DISPATCH_RAYS_DESC CreateRayDesc();
 
 private:

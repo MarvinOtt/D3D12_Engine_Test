@@ -3,37 +3,34 @@
 #include <dxgi1_4.h>
 #include <vector>
 #include "glm/glm.hpp"
-#include "DXR_ACS_BOT.h"
+//#include "DXR_ACS_OBJ.h"
 
 using namespace std; 
 using namespace glm;
 
 class GraphicsDevice;
 class Buffer;
-
-struct AccelerationStructureBuffers
-{
-    Buffer* pScratch;
-    Buffer* pResult;
-    Buffer* pInstanceDesc;    // Used only for top-level AS
-};
+class DXR_ACS_OBJ;
 
 class DXR_ACS_TOP
 {
 public:
-    AccelerationStructureBuffers* ACS_buffer;
-    vector<mat4> trans;
-    vector<DXR_ACS_BOT*> ACS_buffers;
-    vector<LPCWSTR*> hitGroups;
+    vector<DXR_ACS_OBJ*> ACS_OBJ_buffers;
+	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc;
     bool HasBeenBuilt;
     int numberOfRays;
 
+	Buffer* pResult;
+	Buffer* pInstanceDesc;
+
 private:
     HRESULT hr;
+	Buffer* pScratch;
 
 public:
     DXR_ACS_TOP(int numberOfRays2);
-    bool Add_ACS_BOT(DXR_ACS_BOT* acs, mat4 transformation, LPCWSTR* hitGroups);
+    bool Add_ACS_OBJ(DXR_ACS_OBJ* acs);
+	bool Add_ACS_OBJ_multiple(DXR_ACS_OBJ** acs, int size);
     bool Build(GraphicsDevice*);
     bool Update(GraphicsDevice*);
 };

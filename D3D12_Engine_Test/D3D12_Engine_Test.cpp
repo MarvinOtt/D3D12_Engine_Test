@@ -1,94 +1,47 @@
 #include "D3D12_Engine_Test.h"
-#include <sstream>
-#include <fstream>
-#include <sstream>
-
-struct Vertex {
-    Vertex(float x, float y, float z, float r, float g, float b) : pos(x, y, z), color(r, g, b) {}
-	Vertex() : pos(0, 0, 0), color(0, 0, 0) {}
-    XMFLOAT3 pos;
-    XMFLOAT3 color;
-};
-
-struct Vertex_Pos {
-	Vertex_Pos(float x, float y, float z) : pos(x, y, z) {}
-	Vertex_Pos() : pos(0, 0, 0) {}
-	XMFLOAT3 pos;
-};
-
-struct AccelerationStructureBuffers2
-{
-    Buffer* pScratch;
-    Buffer* pResult;
-    Buffer* pInstanceDesc;    // Used only for top-level AS
-};
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)
 {
-
-
     //create the window
 	mainWindow = new Window(hInstance);
-	mainWindow->Create(FullScreen, L"DXR_Test", Width, Height, 2560 * 1);
+	mainWindow->Create(FullScreen, L"DXR_Test", Width, Height, 2560 * 0);
 	mainWindow->Show(nShowCmd);
+
     // initialize direct3d
-    if (!InitD3D())
-    {
-        MessageBox(0, L"Failed to initialize direct3d 12", L"Error", MB_OK);
-        Cleanup();
-        return 1;
-    }
+	InitD3D();
+	InitDirectInput();
 
-    if (!InitDirectInput(hInstance))
-    {
-        MessageBox(0, L"Direct Input Initialization - Failed", L"Error", MB_OK);
-        return 0;
-    }
+    // Main loop
+	MSG msg;
+	ZeroMemory(&msg, sizeof(MSG));
 
-    // start the main loop
-    mainloop();
+	while (true)
+	{
+		if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
+		{
+			if (msg.message == WM_QUIT)
+				break;
+			TranslateMessage(&msg);
+			DispatchMessage(&msg);
+		}
+		else 
+		{
+			Update();
+			if (!IsRunning)
+				break;
+			Render();
+			if (!IsRunning)
+				break;
+		}
+	}
 
     // close the fence event
     CloseHandle(Fence::fenceEvent);
 
-    // clean up everything
-    Cleanup();
-
     return 0;
 }
 
-
-void mainloop() {
-    MSG msg;
-    ZeroMemory(&msg, sizeof(MSG));
-
-    while (true)
-    {
-        if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
-        {
-            if (msg.message == WM_QUIT)
-                break;
-
-            TranslateMessage(&msg);
-            DispatchMessage(&msg);
-        }
-        else {
-            // run game code
-            Update(); // update the game logic
-            if (!IsRunning)
-                return;
-            Render(); // execute the command queue (rendering the scene is the result of the gpu executing the command lists)
-            if (!IsRunning)
-                return;
-        }
-    }
-}
-
-float degree2rad(float angle_in_degrees) {
-    return angle_in_degrees * (PI / 180.0f);
-}
-
-bool InitDirectInput(HINSTANCE hInstance) {
+bool InitDirectInput() {
     keyboardstate = new char[256];
     oldkeyboardstate = new char[256];
     return true;
@@ -96,49 +49,43 @@ bool InitDirectInput(HINSTANCE hInstance) {
 
 bool InitD3D()
 {
-    HRESULT hr;
-
     graphicsDevice = new GraphicsDevice(mainWindow->hwnd, Width, Height);
     graphicsDevice->Create();
-
 
 	//Load models
 	int housesize = 272;
 	VertexBuffer<Vertex>** curvertexbuffer = new VertexBuffer<Vertex>*[housesize];
 	IndexBuffer<int>** curindexbuffer = new IndexBuffer<int>*[housesize];
-	PLYData** plyIn = new PLYData*[housesize];
 
+	string path = string("C:\\Users\\marvi\\Documents\\DXR4\\models\\Mesh");
+	if (GetFileAttributes(L"C:\\Users\\marvi\\Documents\\DXR4\\models") == INVALID_FILE_ATTRIBUTES)
+	{
+		path = string("models\\Mesh");
+	}
 
 	for (int j = 0; j < housesize; ++j)
 	{
 		std::stringstream ss;
 		ss << std::setw(3) << std::setfill('0') << (j + 0);
-		std::string s = ss.str();
 
-		PLYData* plyIn = new PLYData("C:\\Users\\marvi\\Documents\\DXR4\\models\\Mesh" + s + ".ply");
+		PLYData* plyIn = new PLYData(path + ss.str() + ".ply");
 
-		std::vector<double> xPos = plyIn->getElement("vertex").getProperty<double>("x");
-		std::vector<double> yPos = plyIn->getElement("vertex").getProperty<double>("y");
-		std::vector<double> zPos = plyIn->getElement("vertex").getProperty<double>("z");
+		std::vector<double> vPosRaw = plyIn->getVertexPositions();
+		std::vector<Vertex> vPos = std::vector<Vertex>(vPosRaw.size() / 3);
 
-		Vertex* vPos = new Vertex[xPos.size()];
-
-		for (size_t i = 0; i < xPos.size(); i++) {
-			vPos[i] = Vertex(xPos[i], yPos[i], zPos[i], 1, 1, 1);
+		for (size_t i = 0; i < vPos.size(); i++) {
+			vPos[i] = Vertex((float)vPosRaw[i * 3], (float)vPosRaw[i * 3 + 1], (float)vPosRaw[i * 3 + 2], 1, 1, 1);
 		}
-
 		curvertexbuffer[j] = new VertexBuffer<Vertex>();
-		curvertexbuffer[j]->Create(graphicsDevice, xPos.size() * sizeof(Vertex));
-		curvertexbuffer[j]->SetData(graphicsDevice, vPos, xPos.size());
+		curvertexbuffer[j]->Create(graphicsDevice, vPos.size() * sizeof(Vertex));
+		curvertexbuffer[j]->SetData(graphicsDevice, vPos.data(), vPos.size(), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
 
 		std::vector<int> vFaces = plyIn->getElement("face").getListProperty2<int>("vertex_indices");
 
 		curindexbuffer[j] = new IndexBuffer<int>();
 		curindexbuffer[j]->Create(graphicsDevice, vFaces.size() * sizeof(int));
-		curindexbuffer[j]->SetData(graphicsDevice, vFaces.data(), vFaces.size());
+		curindexbuffer[j]->SetData(graphicsDevice, vFaces.data(), vFaces.size(), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
 	}
-
-
 
     // a cube
     Vertex vList[] = {
@@ -148,13 +95,13 @@ bool InitD3D()
         { -0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 0.0f },
         {  0.5f,  0.5f, -0.5f, 1.0f, 0.0f, 0.0f },
 
-        // right side face
+        // right face
         {  0.5f, -0.5f, -0.5f, 0.0f, 1.0f, 0.0f },
         {  0.5f,  0.5f,  0.5f, 0.0f, 1.0f, 0.0f },
         {  0.5f, -0.5f,  0.5f, 0.0f, 1.0f, 0.0f },
         {  0.5f,  0.5f, -0.5f, 0.0f, 1.0f, 0.0f },
 
-        // left side face
+        // left face
         { -0.5f,  0.5f,  0.5f, 0.0f, 0.0f, 1.0f },
         { -0.5f, -0.5f, -0.5f, 0.0f, 0.0f, 1.0f },
         { -0.5f, -0.5f,  0.5f, 0.0f, 0.0f, 1.0f },
@@ -181,43 +128,30 @@ bool InitD3D()
 
     vertexBuffer = new VertexBuffer<Vertex>();
     vertexBuffer->Create(graphicsDevice, sizeof(vList));
-    vertexBuffer->SetData(graphicsDevice, vList, sizeof(vList) / sizeof(Vertex));
+    vertexBuffer->SetData(graphicsDevice, vList, sizeof(vList) / sizeof(Vertex), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
 
     DWORD iList[] = {
-        // ffront face
-        0, 1, 2, // first triangle
-        0, 3, 1, // second triangle
-
+        // front face
+        0, 1, 2, 0, 3, 1,
         // left face
-        4, 5, 6, // first triangle
-        4, 7, 5, // second triangle
-
+        4, 5, 6, 4, 7, 5,
         // right face
-        8, 9, 10, // first triangle
-        8, 11, 9, // second triangle
-
+        8, 9, 10, 8, 11, 9,
         // back face
-        12, 13, 14, // first triangle
-        12, 15, 13, // second triangle
-
+        12, 13, 14, 12, 15, 13,
         // top face
-        16, 17, 18, // first triangle
-        16, 19, 17, // second triangle
-
+        16, 17, 18, 16, 19, 17,
         // bottom face
-        20, 21, 22, // first triangle
-        20, 23, 21, // second triangle
+        20, 21, 22, 20, 23, 21,
     };
 
     numCubeIndices = sizeof(iList) / sizeof(DWORD);
-
     indexBuffer = new IndexBuffer<DWORD>();
     indexBuffer->Create(graphicsDevice, sizeof(iList));
-    indexBuffer->SetData(graphicsDevice, iList, sizeof(iList) / sizeof(DWORD));
+    indexBuffer->SetData(graphicsDevice, iList, sizeof(iList) / sizeof(DWORD), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
 
     // a plane
     Vertex vList2[] = {
-        // bottom face
         { -100, -0.5f, -100, 0.0f, 0.0f, 0.0f },
         { -100, -0.5f,  100, 0.6f, 0.6f, 0.6f },
         {  100, -0.5f,  100, 0.6f, 0.6f, 0.6f },
@@ -228,219 +162,176 @@ bool InitD3D()
 
     vertexBuffer2 = new VertexBuffer<Vertex>();
     vertexBuffer2->Create(graphicsDevice, sizeof(vList2));
-    vertexBuffer2->SetData(graphicsDevice, vList2, sizeof(vList2) / sizeof(Vertex));
+    vertexBuffer2->SetData(graphicsDevice, vList2, sizeof(vList2) / sizeof(Vertex), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
 
     // ACCELERATION STRUCTURES
 
-    ACS_cube = new DXR_ACS_BOT();
-    ACS_cube->AddGeometryIndices(vertexBuffer, indexBuffer);
-    ACS_cube->Build(graphicsDevice);
+	mat4 transformation[2];
+	transformation[0] = translate(mat4(), vec3(-2, 100, 1));
+	transformation[1] = translate(mat4(), vec3(2, 0.1f + 0.0f, 0)) * glm::eulerAngleX(0.3f);
 
-    ACS_plane = new DXR_ACS_BOT();
-    ACS_plane->AddGeometry(vertexBuffer2);
-    ACS_plane->Build(graphicsDevice);
+    ACS_BOT_cube = new DXR_ACS_BOT(graphicsDevice, vertexBuffer, indexBuffer);
 
-	DXR_ACS_BOT** ACS_house = new DXR_ACS_BOT*[housesize];
-	for (int i = 0; i < housesize; ++i)
+	ACS_OBJ_plane = new DXR_ACS_OBJ(graphicsDevice, vertexBuffer2, mat4(), true);
+	for (int i = 0; i < 3; ++i)
 	{
-		ACS_house[i] = new DXR_ACS_BOT();
-		ACS_house[i]->AddGeometryIndices(curvertexbuffer[i], curindexbuffer[i]);
-		ACS_house[i]->Build(graphicsDevice);
+		if (i == 0)
+			ACS_OBJ_cubes.push_back(new DXR_ACS_OBJ(graphicsDevice, ACS_BOT_cube, translate(mat4(), vec3(0, 9.0f, 0)), true));
+		else
+			ACS_OBJ_cubes.push_back(new DXR_ACS_OBJ(graphicsDevice, ACS_BOT_cube, transformation[i - 1], true));
+	}
+	for (int x = 0; x < 10; ++x)
+	{
+		for (int y = 0; y < 10; ++y)
+		{
+			ACS_OBJ_cubes.push_back(new DXR_ACS_OBJ(graphicsDevice, ACS_BOT_cube, translate(mat4(), vec3(x * 1.1f + 3, 0.0f, y * 1.1f)), true));
+		}
 	}
 
-    mat4 transformation[3];
-    transformation[0] = mat4(); // Identity
-    transformation[1] = translate(mat4(), vec3(-2, 100, 1));
-    transformation[2] = translate(mat4(), vec3(2, 0.1f + 0.0f, 0)) * glm::eulerAngleX(0.3f);
+	DXR_ACS_OBJ** ACS_OBJ_house = new DXR_ACS_OBJ*[housesize];
+	for (int i = 0; i < housesize; ++i)
+	{
+		ACS_OBJ_house[i] = new DXR_ACS_OBJ(graphicsDevice, curvertexbuffer[i], curindexbuffer[i], mat4(), true);
+	}
 
 	int curACScount = 0;
-    ACS_top = new DXR_ACS_TOP(2);
-    uint8_t* pData;
-    CB_objectmatrices = new Buffer*[4 + 10*10 + housesize];
-    LPCWSTR hitGroups[] = { L"PlaneHitGroup", L"ShadowHitGroup" };
-    ACS_top->Add_ACS_BOT(ACS_plane, transformation[0], hitGroups);
-    CB_objectmatrices[curACScount] = new Buffer(graphicsDevice, sizeof(ObjectMatrix), D3D12_RESOURCE_FLAG_NONE, D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_HEAP_TYPE_UPLOAD);
-    d3d_call(CB_objectmatrices[curACScount]->buffer->Map(0, nullptr, (void**)&pData));
-    memcpy(pData, &transformation[0], sizeof(ObjectMatrix));
-    CB_objectmatrices[curACScount]->buffer->Unmap(0, nullptr);
-	curACScount++;
-
-    LPCWSTR triHitGroups[] = { L"HitGroup", L"ShadowHitGroup" };
-    for (int i = 0; i < 3; ++i)
-    {
-		if(i == 0)
-			ACS_top->Add_ACS_BOT(ACS_cube, translate(mat4(), vec3(1, 0.0f, 0)), triHitGroups);
-		else
-			ACS_top->Add_ACS_BOT(ACS_cube, transformation[i], triHitGroups);
-        CB_objectmatrices[curACScount] = new Buffer(graphicsDevice, sizeof(ObjectMatrix), D3D12_RESOURCE_FLAG_NONE, D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_HEAP_TYPE_UPLOAD);
-        d3d_call(CB_objectmatrices[curACScount]->buffer->Map(0, nullptr, (void**)&pData));
-        memcpy(pData, &transformation[i], sizeof(ObjectMatrix));
-        CB_objectmatrices[curACScount]->buffer->Unmap(0, nullptr);
-		curACScount++;
-    }
-
-    for (int x = 0; x < 10; ++x)
-    {
-        for (int y = 0; y < 10; ++y)
-        {
-            mat4 trans = translate(mat4(), vec3(x * 1.1f + 3, 0.0f, y * 1.1f));
-            ACS_top->Add_ACS_BOT(ACS_cube, trans, triHitGroups);
-            CB_objectmatrices[curACScount] = new Buffer(graphicsDevice, sizeof(ObjectMatrix), D3D12_RESOURCE_FLAG_NONE, D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_HEAP_TYPE_UPLOAD);
-            d3d_call(CB_objectmatrices[curACScount]->buffer->Map(0, nullptr, (void**)&pData));
-            memcpy(pData, &trans, sizeof(ObjectMatrix));
-            CB_objectmatrices[curACScount]->buffer->Unmap(0, nullptr);
-			curACScount++;
-        }
-    }
-	for (int i = 0; i < housesize; ++i)
-	{
-		ACS_top->Add_ACS_BOT(ACS_house[i], transformation[0], triHitGroups);
-		CB_objectmatrices[curACScount] = new Buffer(graphicsDevice, sizeof(ObjectMatrix), D3D12_RESOURCE_FLAG_NONE, D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_HEAP_TYPE_UPLOAD);
-		d3d_call(CB_objectmatrices[curACScount]->buffer->Map(0, nullptr, (void**)&pData));
-		memcpy(pData, &transformation[0], sizeof(ObjectMatrix));
-		CB_objectmatrices[curACScount]->buffer->Unmap(0, nullptr);
-		curACScount++;
-	}
-
+    ACS_top = new DXR_ACS_TOP(1);
+	ACS_top->Add_ACS_OBJ_multiple(ACS_OBJ_cubes.data(), ACS_OBJ_cubes.size());
+	ACS_top->Add_ACS_OBJ(ACS_OBJ_plane);
+	ACS_top->Add_ACS_OBJ_multiple(ACS_OBJ_house, housesize / 1);
     ACS_top->Build(graphicsDevice);
 
-    DXR_pipelineState = new DXR_PipelineState(2);
+	DXR_COL_pipelineState = new DXR_PipelineState(1);
     DXR_RootSignature RS_RayGen, RS_TriangleHit, RS_PlaneHit;
 
     // Ray Gen
-    std::vector<DescriptorRange> RS_RayGen_DR{ {D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 0, 0}, {D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 1, 0}, {D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 5, 1}, {D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 3, 2}, {D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 8, 3} };
+    std::vector<DescriptorRange> RS_RayGen_DR{ {D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 0, 0}, {D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 1, 0}, {D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 3, 2}, {D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 8, 3}, {D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 11, 4}, {D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 7, 5}, {D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 4, 3}, {D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 6, 4} };
     RS_RayGen.AddRP_DescriptorTable(RS_RayGen_DR);
     RS_RayGen.AddRP_CBV(0);
+	RS_RayGen.Add_Sampler(D3D12_FILTER_ANISOTROPIC, D3D12_TEXTURE_ADDRESS_MODE_WRAP, 0);
     RS_RayGen.Create();
 
     // Triangle Hit
-    std::vector<DescriptorRange> RS_TriHit_DR{ {D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 1, 0} };
     RS_TriangleHit.AddRP_SRV(1);
     RS_TriangleHit.AddRP_SRV(2);
-    RS_TriangleHit.AddRP_DescriptorTable(RS_TriHit_DR);
     RS_TriangleHit.AddRP_CBV(1);
     RS_TriangleHit.Create();
 
     // Plane Hit
-    std::vector<DescriptorRange> RS_PlaneHit_DR{ {D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 1, 0} };
     RS_PlaneHit.AddRP_SRV(1);
-    RS_PlaneHit.AddRP_DescriptorTable(RS_PlaneHit_DR);
     RS_PlaneHit.AddRP_CBV(1);
     RS_PlaneHit.Create();
 
-    std::vector<LPCWSTR> shaders{ L"rayGen", L"chs", L"planeChs", L"shadowChs", L"miss", L"shadowMiss"};
+    std::vector<LPCWSTR> shaders{ L"rayGen", L"chs", L"planeChs", L"miss"};
 
-    DXR_pipelineState->SetShaders(L"DXR_Shader.hlsl", shaders);
-    DXR_pipelineState->AddHitGroup(nullptr, L"chs", L"HitGroup");
-    DXR_pipelineState->AddHitGroup(nullptr, L"planeChs", L"PlaneHitGroup");
-    DXR_pipelineState->AddHitGroup(nullptr, L"shadowChs", L"ShadowHitGroup");
-    DXR_pipelineState->AddRootSignature2Shader(L"rayGen", RS_RayGen.RS_desc);
-    DXR_pipelineState->AddRootSignature2Shader(L"chs", RS_TriangleHit.RS_desc, L"HitGroup");
-    DXR_pipelineState->AddRootSignature2Shader(L"planeChs", RS_PlaneHit.RS_desc, L"PlaneHitGroup");
-    DXR_pipelineState->Build(graphicsDevice);
+    DXR_COL_pipelineState->SetShaders(L"DXR_Shader.hlsl", shaders);
+    DXR_COL_pipelineState->AddHitGroup(nullptr, L"chs", L"HitGroup");
+    DXR_COL_pipelineState->AddHitGroup(nullptr, L"planeChs", L"PlaneHitGroup");
+    DXR_COL_pipelineState->AddRootSignature2Shader(L"rayGen", RS_RayGen.RS_desc);
+    DXR_COL_pipelineState->AddRootSignature2Shader(L"chs", RS_TriangleHit.RS_desc, L"HitGroup");
+    DXR_COL_pipelineState->AddRootSignature2Shader(L"planeChs", RS_PlaneHit.RS_desc, L"PlaneHitGroup");
+    DXR_COL_pipelineState->Build(graphicsDevice);
+
+	
+
+	DXR_AO_pipelineState = new DXR_PipelineState(1);
+	RS_RayGen = RS_TriangleHit = RS_PlaneHit = {};
+
+	// Ray Gen
+	RS_RayGen_DR = { {D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 5, 1}, {D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 1, 0}, {D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 3, 4}, {D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 8, 5}, {D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 11, 3} };
+	RS_RayGen.AddRP_DescriptorTable(RS_RayGen_DR);
+	RS_RayGen.AddRP_CBV(0);
+	RS_RayGen.Create();
+
+	std::vector<LPCWSTR> shaders2{ L"rayGen", L"shadowChs", L"shadowMiss" };
+
+	DXR_AO_pipelineState->SetShaders(L"DXR_Shader_AO.hlsl", shaders2);
+	DXR_AO_pipelineState->AddHitGroup(nullptr, L"shadowChs", L"ShadowHitGroup");
+	DXR_AO_pipelineState->AddRootSignature2Shader(L"rayGen", RS_RayGen.RS_desc);
+	DXR_AO_pipelineState->Build(graphicsDevice);
     
     //Create and initialize Resources
     mpSrvUavHeap = new DescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
-    mpSrvUavHeap->Create(graphicsDevice, 10);
-
-    outputtex_RT = new Texture2D();
-    outputtex_RT->Create(graphicsDevice, DXGI_FORMAT_R8G8B8A8_UNORM, graphicsDevice->bufferWidth, graphicsDevice->bufferHeight);
-    outputAOtex_RT = new Texture2D();
-    outputAOtex_RT->Create(graphicsDevice, DXGI_FORMAT_R16_UNORM, graphicsDevice->bufferWidth, graphicsDevice->bufferHeight);
-    outputtex_CS = new Texture2D();
-    outputtex_CS->Create(graphicsDevice, DXGI_FORMAT_R8G8B8A8_UNORM, graphicsDevice->bufferWidth, graphicsDevice->bufferHeight);
-    posOutput = new Texture2D();
-    posOutput->Create(graphicsDevice, DXGI_FORMAT_R32_FLOAT, graphicsDevice->bufferWidth, graphicsDevice->bufferHeight);
-    oldposOutput = new Texture2D();
-    oldposOutput->Create(graphicsDevice, DXGI_FORMAT_R32_FLOAT, graphicsDevice->bufferWidth, graphicsDevice->bufferHeight);
-    AOtex_old = new Texture2D();
-    AOtex_old->Create(graphicsDevice, DXGI_FORMAT_R16_UNORM, graphicsDevice->bufferWidth, graphicsDevice->bufferHeight);
-    AOtex_OUT = new Texture2D();
-    AOtex_OUT->Create(graphicsDevice, DXGI_FORMAT_R16_UNORM, graphicsDevice->bufferWidth, graphicsDevice->bufferHeight);
-	normaltex = new Texture2D();
-	normaltex->Create(graphicsDevice, DXGI_FORMAT_R8G8B8A8_SNORM, graphicsDevice->bufferWidth, graphicsDevice->bufferHeight);
-	AOtex_vertical = new Texture2D();
-	AOtex_vertical->Create(graphicsDevice, DXGI_FORMAT_R16_UNORM, graphicsDevice->bufferWidth, graphicsDevice->bufferHeight);
-    graphicsDevice->commandList->commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(outputtex_CS->buffer, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_COPY_SOURCE));
-    graphicsDevice->commandList->commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(outputtex_RT->buffer, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_UNORDERED_ACCESS));
-    graphicsDevice->commandList->commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(posOutput->buffer, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_UNORDERED_ACCESS));
-    graphicsDevice->commandList->commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(oldposOutput->buffer, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_UNORDERED_ACCESS));
-	graphicsDevice->commandList->commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(normaltex->buffer, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_UNORDERED_ACCESS));
-	graphicsDevice->commandList->commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(AOtex_vertical->buffer, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_UNORDERED_ACCESS));
+    mpSrvUavHeap->Create(graphicsDevice, 12);
 
 
-    mpSrvUavHeap->SetTexture2D(graphicsDevice, outputtex_RT, 0);
-    mpSrvUavHeap->SetTexture2D(graphicsDevice, outputtex_CS, 2);
-    mpSrvUavHeap->SetTexture2D(graphicsDevice, posOutput, 3);
-    mpSrvUavHeap->SetTexture2D(graphicsDevice, oldposOutput, 4);
-    mpSrvUavHeap->SetTexture2D(graphicsDevice, outputAOtex_RT, 5);
-    mpSrvUavHeap->SetTexture2D(graphicsDevice, AOtex_old, 6);
-    mpSrvUavHeap->SetTexture2D(graphicsDevice, AOtex_OUT, 7);
-	mpSrvUavHeap->SetTexture2D(graphicsDevice, normaltex, 8);
-	mpSrvUavHeap->SetTexture2D(graphicsDevice, AOtex_vertical, 9);
+	NewTexture2D_Create(outputtex_RT, graphicsDevice, DXGI_FORMAT_R8G8B8A8_UNORM, graphicsDevice->bufferWidth, graphicsDevice->bufferHeight);
+	NewTexture2D_Create(outputAOtex_RT, graphicsDevice, DXGI_FORMAT_R16_UNORM, graphicsDevice->bufferWidth, graphicsDevice->bufferHeight);
+	NewTexture2D_Create(outputtex_CS, graphicsDevice, DXGI_FORMAT_R8G8B8A8_UNORM, graphicsDevice->bufferWidth, graphicsDevice->bufferHeight);
+	NewTexture2D_Create(posOutput, graphicsDevice, DXGI_FORMAT_R32_FLOAT, graphicsDevice->bufferWidth, graphicsDevice->bufferHeight);
+	NewTexture2D_Create(oldposOutput, graphicsDevice, DXGI_FORMAT_R32_FLOAT, graphicsDevice->bufferWidth, graphicsDevice->bufferHeight);
+	NewTexture2D_Create(AOtex_old, graphicsDevice, DXGI_FORMAT_R16_UNORM, graphicsDevice->bufferWidth, graphicsDevice->bufferHeight);
+	NewTexture2D_Create(AOtex_OUT, graphicsDevice, DXGI_FORMAT_R16_UNORM, graphicsDevice->bufferWidth, graphicsDevice->bufferHeight);
+	NewTexture2D_Create(normaltex, graphicsDevice, DXGI_FORMAT_R8G8B8A8_SNORM, graphicsDevice->bufferWidth, graphicsDevice->bufferHeight);
+	NewTexture2D_Create(AOtex_vertical, graphicsDevice, DXGI_FORMAT_R16_UNORM, graphicsDevice->bufferWidth, graphicsDevice->bufferHeight);
+	NewTexture2D_Create(AOtex_F, graphicsDevice, DXGI_FORMAT_R16_UNORM, graphicsDevice->bufferWidth, graphicsDevice->bufferHeight);
+	NewTexture2D_Create(TS_strength, graphicsDevice, DXGI_FORMAT_R16_UNORM, graphicsDevice->bufferWidth, graphicsDevice->bufferHeight);
 
+    mpSrvUavHeap->SetTexture2D(outputtex_RT, 0);
+    mpSrvUavHeap->SetTexture2D(outputtex_CS, 2);
+    mpSrvUavHeap->SetTexture2D(posOutput, 3);
+    mpSrvUavHeap->SetTexture2D(oldposOutput, 4);
+    mpSrvUavHeap->SetTexture2D(outputAOtex_RT, 5);
+    mpSrvUavHeap->SetTexture2D(AOtex_old, 6);
+    mpSrvUavHeap->SetTexture2D(AOtex_OUT, 7);
+	mpSrvUavHeap->SetTexture2D(normaltex, 8);
+	mpSrvUavHeap->SetTexture2D(AOtex_vertical, 9);
+	mpSrvUavHeap->SetTexture2D(AOtex_F, 10);
+	mpSrvUavHeap->SetTexture2D(TS_strength, 11);
 
-    D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-    srvDesc.ViewDimension = D3D12_SRV_DIMENSION_RAYTRACING_ACCELERATION_STRUCTURE;
-    srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-    srvDesc.RaytracingAccelerationStructure.Location = ACS_top->ACS_buffer->pResult->buffer->GetGPUVirtualAddress();
-    mpSrvUavHeap->SetSRV(graphicsDevice, srvDesc, 1);
+    mpSrvUavHeap->SetSRV(ACS_top->srvDesc, 1);
 
     CB_cameraWVP2 = new Buffer(graphicsDevice, sizeof(CameraMatrix), D3D12_RESOURCE_FLAG_NONE, D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_HEAP_TYPE_UPLOAD);
-
-	int curgeomcount = 0;
-    DXR_shaderTable = new DXR_ShaderTable(ACS_top);
-    UINT64 rayGen_data[] = { mpSrvUavHeap->descriptorHeap->GetGPUDescriptorHandleForHeapStart().ptr, CB_cameraWVP2->buffer->GetGPUVirtualAddress() };
-    DXR_shaderTable->SetRayGenShader(L"rayGen", rayGen_data, arraysize(rayGen_data));
-    DXR_shaderTable->SetMissShader(0, L"miss", nullptr, 0);
-    DXR_shaderTable->SetMissShader(1, L"shadowMiss", nullptr, 0);
-
-    UINT64 plane_data[] = { vertexBuffer2->buffer->GetGPUVirtualAddress(), mpSrvUavHeap->descriptorHeap->GetGPUDescriptorHandleForHeapStart().ptr, CB_objectmatrices[curgeomcount]->buffer->GetGPUVirtualAddress() };
-    DXR_shaderTable->SetGeomData(curgeomcount, 0, plane_data);
-	curgeomcount++;
+	CB_CScamera = new Buffer(graphicsDevice, sizeof(CS_camera), D3D12_RESOURCE_FLAG_NONE, D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_HEAP_TYPE_UPLOAD);
     
-    for (int j = 0; j < 3; ++j)
+	DXR_COL_shadertable = new DXR_ShaderTable(ACS_top);
+    UINT64 rayGen_data[] = { mpSrvUavHeap->descriptorHeap->GetGPUDescriptorHandleForHeapStart().ptr, CB_CScamera->buffer->GetGPUVirtualAddress() };
+	DXR_COL_shadertable->SetRayGenShader(L"rayGen", rayGen_data, arraysize(rayGen_data));
+	DXR_COL_shadertable->SetMissShader(0, L"miss", nullptr, 0);
+
+    UINT64 plane_data[] = { vertexBuffer2->buffer->GetGPUVirtualAddress(), ACS_OBJ_plane->transBuf->buffer->GetGPUVirtualAddress() };
+	DXR_COL_shadertable->SetGeomData(ACS_OBJ_plane, 0, plane_data, L"PlaneHitGroup");
+    
+    for (int i = 0; i < ACS_OBJ_cubes.size(); ++i)
     {
-        UINT64* triangle_data = new UINT64[4]{ vertexBuffer->buffer->GetGPUVirtualAddress(), indexBuffer->buffer->GetGPUVirtualAddress(), mpSrvUavHeap->descriptorHeap->GetGPUDescriptorHandleForHeapStart().ptr, CB_objectmatrices[curgeomcount]->buffer->GetGPUVirtualAddress() };
-        DXR_shaderTable->SetGeomData(curgeomcount, 0, triangle_data);
-		curgeomcount++;
+        UINT64* triangle_data = new UINT64[4]{ vertexBuffer->buffer->GetGPUVirtualAddress(), indexBuffer->buffer->GetGPUVirtualAddress(), ACS_OBJ_cubes[i]->transBuf->buffer->GetGPUVirtualAddress() };
+		DXR_COL_shadertable->SetGeomData(ACS_OBJ_cubes[i], 0, triangle_data, L"HitGroup");
     }
 
-    for (int x = 0; x < 10; ++x)
-    {
-        for (int y = 0; y < 10; ++y)
-        {
-            UINT64* triangle_data = new UINT64[4]{ vertexBuffer->buffer->GetGPUVirtualAddress(), indexBuffer->buffer->GetGPUVirtualAddress(), mpSrvUavHeap->descriptorHeap->GetGPUDescriptorHandleForHeapStart().ptr, CB_objectmatrices[curgeomcount]->buffer->GetGPUVirtualAddress() };
-            DXR_shaderTable->SetGeomData(curgeomcount, 0, triangle_data);
-			curgeomcount++;
-        }
-    }
-	for (int i = 0; i < housesize; ++i)
+	for (int i = 0; i < housesize / 1; ++i)
 	{
-		UINT64* house000_data = new UINT64[4]{ curvertexbuffer[i]->buffer->GetGPUVirtualAddress(), curindexbuffer[i]->buffer->GetGPUVirtualAddress(), mpSrvUavHeap->descriptorHeap->GetGPUDescriptorHandleForHeapStart().ptr, CB_objectmatrices[curgeomcount]->buffer->GetGPUVirtualAddress() };
-		DXR_shaderTable->SetGeomData(curgeomcount, 0, house000_data);
-		curgeomcount++;
+		UINT64* house000_data = new UINT64[4]{ curvertexbuffer[i]->buffer->GetGPUVirtualAddress(), curindexbuffer[i]->buffer->GetGPUVirtualAddress(), ACS_OBJ_house[i]->transBuf->buffer->GetGPUVirtualAddress() };
+		DXR_COL_shadertable->SetGeomData(ACS_OBJ_house[i], 0, house000_data, L"HitGroup");
 	}
 
-    DXR_shaderTable->Create(graphicsDevice, DXR_pipelineState);
+	DXR_COL_shadertable->Create(graphicsDevice, DXR_COL_pipelineState);
+
+	// Ambient Occlusion
+	DXR_AO_shadertable = new DXR_ShaderTable(ACS_top);
+	UINT64 rayGen_data2[] = { mpSrvUavHeap->descriptorHeap->GetGPUDescriptorHandleForHeapStart().ptr, CB_cameraWVP2->buffer->GetGPUVirtualAddress() };
+	DXR_AO_shadertable->SetRayGenShader(L"rayGen", rayGen_data2, arraysize(rayGen_data2));
+	DXR_AO_shadertable->SetMissShader(0, L"shadowMiss", nullptr, 0);
+
+	for (int i = 0; i < ACS_top->ACS_OBJ_buffers.size(); ++i)
+	{
+		DXR_AO_shadertable->SetGeomData(ACS_top->ACS_OBJ_buffers[i], 0, nullptr, L"ShadowHitGroup");
+	}
+
+	DXR_AO_shadertable->Create(graphicsDevice, DXR_AO_pipelineState);
 
 	// Temporal Sampling
 
 	emptyVB = new VertexBuffer<XMFLOAT4>();
 	emptyVB->CreateFullScreen(graphicsDevice);
 
-	CB_CScamera = new Buffer(graphicsDevice, sizeof(CS_camera), D3D12_RESOURCE_FLAG_NONE, D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_HEAP_TYPE_UPLOAD);
-
 	Shader temporalSamplingShader;
 	temporalSamplingShader.Load(L"TemporalSampling.hlsl", "main", "ps_5_0");
 	Shader basic_VS;
 	basic_VS.Load(L"VertexShader.hlsl", "main", "vs_5_0");
-
+    
     compute_RSD = new DXR_RootSignature();
-    std::vector<DescriptorRange> RS_compute_DR{ /*{D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 0, 4},*/ {D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 5, 1}, {D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 3, 2}, /*{D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 2, 3},*/ {D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 4, 0}, {D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 6, 1}, {D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 7, 6} };
+    std::vector<DescriptorRange> RS_compute_DR{ {D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 5, 0}, {D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 7, 1},  {D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 11, 2}, {D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 6, 0} };
     compute_RSD->AddRP_DescriptorTable(RS_compute_DR);
-    compute_RSD->AddRP_CBV(0);
-	compute_RSD->Add_Sampler(D3D12_FILTER_MIN_MAG_MIP_LINEAR, D3D12_TEXTURE_ADDRESS_MODE_WRAP, 0);
     compute_RSD->CreateWithFlags(D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
 	compute_RSD->Build(graphicsDevice);
 
@@ -458,10 +349,11 @@ bool InitD3D()
 
 	//vertical
 	Shader BSV_shader;
+    
 	BSV_shader.Load(L"BilateralFilter_vertical.hlsl", "main", "ps_5_0");
 
 	BFV_RS = new DXR_RootSignature();
-	std::vector<DescriptorRange> BFV_RS_DR{ {D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 7, 0}, {D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0, 1}, {D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 8, 2}, {D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 3, 3}, {D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 9, 2} };
+	std::vector<DescriptorRange> BFV_RS_DR{ {D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 6, 0}, {D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0, 1}, {D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 8, 2}, {D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 3, 3}, {D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 9, 2} };
 	BFV_RS->AddRP_DescriptorTable(BFV_RS_DR);
 	BFV_RS->CreateWithFlags(D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
 	BFV_RS->Build(graphicsDevice);
@@ -474,9 +366,10 @@ bool InitD3D()
 	//final
 	Shader BS_shader;
 	BS_shader.Load(L"BilateralFilter.hlsl", "main", "ps_5_0");
+	
 
 	BF_RS = new DXR_RootSignature();
-	std::vector<DescriptorRange> BF_RS_DR{ {D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 9, 0}, {D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0, 1}, {D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 8, 2}, {D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 3, 3}, {D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 2, 1} };
+	std::vector<DescriptorRange> BF_RS_DR{ {D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 9, 0}, {D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0, 1}, {D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 8, 2}, {D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 3, 3}, {D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 2, 1}, {D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 7, 2} };
 	BF_RS->AddRP_DescriptorTable(BF_RS_DR);
 	BF_RS->CreateWithFlags(D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
 	BF_RS->Build(graphicsDevice);
@@ -492,7 +385,6 @@ bool InitD3D()
 
     
 
-	// Initialize other variables
 	viewport = { 0.f, 0.f, (float)Width, (float)Height, 0.0f, 1.0f };
 	scissorRect = { 0, 0, Width, Height };
 	cameraUp = XMFLOAT4(0.0f, 1.0f, 0.0f, 0.0f);
@@ -531,7 +423,7 @@ void DetectInput()
     if (camerabewegen)
     {
         int changed = 0;
-        float deltax, deltay;
+        LONG deltax, deltay;
         deltax = mousepos.x - cameramousepos.x;
         deltay = mousepos.y - cameramousepos.y;
         mouserotationbuffer.x += 0.003f * deltax;
@@ -613,11 +505,7 @@ void Update()
 
     cuberotation += 0.002f;
     mat4 newrotmatrix = glm::translate(vec3(-1, 0, 0)) * glm::eulerAngleX(cuberotation) * glm::eulerAngleY(cuberotation * 0.7f) * glm::eulerAngleY(cuberotation * 0.3f) * glm::translate(vec3(2, 0, 0));
-
-    ACS_top->trans[1] = newrotmatrix;
-    d3d_call(CB_objectmatrices[1]->buffer->Map(0, nullptr, (void**)&pData));
-    memcpy(pData, &newrotmatrix, sizeof(ObjectMatrix));
-    CB_objectmatrices[1]->buffer->Unmap(0, nullptr);
+	ACS_OBJ_cubes[1]->ChangeTrans(newrotmatrix);
 
     XMStoreFloat4(&(CScamera.offset), camerapos_vec);
     XMStoreFloat4x4(&(CScamera.rot), cameraRotMat);
@@ -630,6 +518,7 @@ void Update()
     memcpy(pData, &CScamera, sizeof(CScamera));
     CB_CScamera->buffer->Unmap(0, nullptr);
 
+    
 
     counter++;
     counter = counter % 128;
@@ -639,188 +528,86 @@ void Update()
 
 void UpdatePipeline()
 {
-    //Sleep(100);
-    HRESULT hr;
-	//if (counter % 2 == 0)
-	//{
-	//	mpSrvUavHeap->SetTexture2D(graphicsDevice, posOutput, 4);
-	//	mpSrvUavHeap->SetTexture2D(graphicsDevice, oldposOutput, 3);
-
-	//	mpSrvUavHeap->SetTexture2D(graphicsDevice, AOtex_old, 7);
-	//	mpSrvUavHeap->SetTexture2D(graphicsDevice, AOtex_OUT, 6);
-	//}
-	//else
-	//{
-	//	mpSrvUavHeap->SetTexture2D(graphicsDevice, posOutput, 3);
-	//	mpSrvUavHeap->SetTexture2D(graphicsDevice, oldposOutput, 4);
-
-	//	mpSrvUavHeap->SetTexture2D(graphicsDevice, AOtex_old, 6);
-	//	mpSrvUavHeap->SetTexture2D(graphicsDevice, AOtex_OUT, 7);
-	//}
-
-	//graphicsDevice->WaitForEventCompletion(graphicsDevice->frameIndex);
     graphicsDevice->frameIndex = graphicsDevice->swapChain->swapChain->GetCurrentBackBufferIndex();
 
+	// Init
+    d3d_call(graphicsDevice->commandAllocator[graphicsDevice->frameIndex].commandAllocator->Reset())
+    d3d_call(graphicsDevice->commandList->commandList->Reset(graphicsDevice->commandAllocator[graphicsDevice->frameIndex].commandAllocator, nullptr))
 
-    d3d_call(graphicsDevice->commandAllocator[graphicsDevice->frameIndex].commandAllocator->Reset());
+	ACS_top->Update(graphicsDevice);
 
-    d3d_call(graphicsDevice->commandList->commandList->Reset(graphicsDevice->commandAllocator[graphicsDevice->frameIndex].commandAllocator, nullptr));
-
-    // Start recording commands into the command queue
-
-    //ACS_top->Update(graphicsDevice);
-
-    //D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-    //srvDesc.ViewDimension = D3D12_SRV_DIMENSION_RAYTRACING_ACCELERATION_STRUCTURE;
-    //srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-    //srvDesc.RaytracingAccelerationStructure.Location = ACS_top->ACS_buffer->pResult->buffer->GetGPUVirtualAddress();
-    //mpSrvUavHeap->SetSRV(graphicsDevice, srvDesc, 1);
-
-
-
-    ID3D12DescriptorHeap* heaps[] = { mpSrvUavHeap->descriptorHeap };
-    graphicsDevice->commandList->commandList->SetDescriptorHeaps(arraysize(heaps), heaps);
-
-    // Let's raytrace
-    //graphicsDevice->commandList->commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(outputtex->buffer, D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATE_UNORDERED_ACCESS));
-
-
-    //graphicsDevice->commandList->CloseAndExecute(graphicsDevice->commandQueue);
-
-    //graphicsDevice->fences[graphicsDevice->frameIndex].fenceValue++;
-    //graphicsDevice->commandQueue->commandQueue->Signal(graphicsDevice->fences[graphicsDevice->frameIndex].fence, graphicsDevice->fences[graphicsDevice->frameIndex].fenceValue);
-    //graphicsDevice->WaitForEventCompletion(graphicsDevice->frameIndex);
-    //d3d_call(graphicsDevice->commandAllocator[graphicsDevice->frameIndex].commandAllocator->Reset());
-
-    //d3d_call(graphicsDevice->commandList->commandList->Reset(graphicsDevice->commandAllocator[graphicsDevice->frameIndex].commandAllocator, nullptr));
-
-
-
-
-
-
-    ////graphicsDevice->commandList->commandList->SetPipelineState(compute_PSO);
-    ////graphicsDevice->commandList->commandList->SetComputeRootSignature(compute_RS);
-
-    ////graphicsDevice->commandList->commandList->SetComputeRootDescriptorTable(0, mpSrvUavHeap->descriptorHeap->GetGPUDescriptorHandleForHeapStart());
-    ////graphicsDevice->commandList->commandList->SetComputeRootConstantBufferView(1, CB_CScamera->buffer->GetGPUVirtualAddress());
-
-
-    ////graphicsDevice->commandList->commandList->Dispatch(768, 1, 1);
-
-
+	graphicsDevice->commandList->SetDescriptorHeaps({ mpSrvUavHeap->descriptorHeap });
 
 	graphicsDevice->commandList->commandList->CopyResource(oldposOutput->buffer, posOutput->buffer);
 	graphicsDevice->commandList->commandList->CopyResource(AOtex_old->buffer, AOtex_OUT->buffer);
 
-
-	//graphicsDevice->commandList->CloseAndExecute(graphicsDevice->commandQueue);
-
-	//graphicsDevice->fences[graphicsDevice->frameIndex].fenceValue++;
-	//graphicsDevice->commandQueue->commandQueue->Signal(graphicsDevice->fences[graphicsDevice->frameIndex].fence, graphicsDevice->fences[graphicsDevice->frameIndex].fenceValue);
-	//graphicsDevice->WaitForEventCompletion(graphicsDevice->frameIndex);
-	//d3d_call(graphicsDevice->commandAllocator[graphicsDevice->frameIndex].commandAllocator->Reset());
-
-	//d3d_call(graphicsDevice->commandList->commandList->Reset(graphicsDevice->commandAllocator[graphicsDevice->frameIndex].commandAllocator, nullptr));
-
-	//graphicsDevice->commandList->commandList->SetDescriptorHeaps(arraysize(heaps), heaps);
-
-	//graphicsDevice->commandList->commandList->SetDescriptorHeaps(arraysize(heaps), heaps);
-
-    //graphicsDevice->commandList->commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(oldposOutput->buffer, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_UNORDERED_ACCESS));
-    //graphicsDevice->commandList->commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(AOtex_old->buffer, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_UNORDERED_ACCESS));
+	graphicsDevice->commandList->SetViewPortScissorRect(viewport, scissorRect);
 
 
-    //graphicsDevice->commandList->commandList->CopyResource(oldposOutput->buffer, posOutput->buffer);
 
-    D3D12_DISPATCH_RAYS_DESC raytraceDesc = DXR_shaderTable->CreateRayDesc();
-
-    // Bind the empty root signature
-    graphicsDevice->commandList->commandList->SetComputeRootSignature(DXR_pipelineState->emptyRootSig);
-
-    // Dispatch
-    graphicsDevice->commandList->commandList->SetPipelineState1(DXR_pipelineState->pipelineState);
+	// Raytracing
+    D3D12_DISPATCH_RAYS_DESC raytraceDesc = DXR_COL_shadertable->CreateRayDesc();
+    graphicsDevice->commandList->commandList->SetComputeRootSignature(DXR_COL_pipelineState->emptyRootSig);
+    graphicsDevice->commandList->commandList->SetPipelineState1(DXR_COL_pipelineState->pipelineState);
     graphicsDevice->commandList->commandList->DispatchRays(&raytraceDesc);
 
+	D3D12_RESOURCE_BARRIER uavBarrier = {};
+	uavBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_UAV;
+	uavBarrier.UAV.pResource = outputtex_RT->buffer;
+	graphicsDevice->commandList->commandList->ResourceBarrier(1, &uavBarrier);
 
 
+	raytraceDesc = DXR_AO_shadertable->CreateRayDesc();
+	graphicsDevice->commandList->commandList->SetComputeRootSignature(DXR_AO_pipelineState->emptyRootSig);
+	graphicsDevice->commandList->commandList->SetPipelineState1(DXR_AO_pipelineState->pipelineState);
+	graphicsDevice->commandList->commandList->DispatchRays(&raytraceDesc);
 
+	uavBarrier = {};
+	uavBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_UAV;
+	uavBarrier.UAV.pResource = outputAOtex_RT->buffer;
+	graphicsDevice->commandList->commandList->ResourceBarrier(1, &uavBarrier);
+	
 
-	graphicsDevice->commandList->commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(oldposOutput->buffer, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE));
-	graphicsDevice->commandList->commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(AOtex_old->buffer, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE));
+	graphicsDevice->commandList->ResourceBarrierTransition(D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, { oldposOutput->buffer, AOtex_old->buffer });
 
+	//D3D12_RESOURCE_BARRIER uavBarrier = {};
+	//uavBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_UAV;
+	//uavBarrier.UAV.pResource = oldposOutput->buffer;
+	//graphicsDevice->commandList->commandList->ResourceBarrier(1, &uavBarrier);
+
+	//uavBarrier = {};
+	//uavBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_UAV;
+	//uavBarrier.UAV.pResource = AOtex_old->buffer;
+	//graphicsDevice->commandList->commandList->ResourceBarrier(1, &uavBarrier);
+
+	//Temporal Sampling
 	graphicsDevice->commandList->commandList->SetPipelineState(compute_PSO->pipelineState);
 	graphicsDevice->commandList->commandList->SetGraphicsRootSignature(compute_RSD->RS);
-
 	graphicsDevice->commandList->commandList->SetGraphicsRootDescriptorTable(0, mpSrvUavHeap->descriptorHeap->GetGPUDescriptorHandleForHeapStart());
-	graphicsDevice->commandList->commandList->SetGraphicsRootConstantBufferView(1, CB_CScamera->buffer->GetGPUVirtualAddress());
+	graphicsDevice->commandList->DrawInstanced(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST, emptyVB, 6);
 
-	graphicsDevice->commandList->commandList->RSSetViewports(1, &viewport); // set the viewports
-	graphicsDevice->commandList->commandList->RSSetScissorRects(1, &scissorRect); // set the scissor rects
-	graphicsDevice->commandList->commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	graphicsDevice->commandList->commandList->IASetVertexBuffers(0, 1, &emptyVB->bufferView);
-
-	graphicsDevice->commandList->commandList->DrawInstanced(6, 1, 0, 0);
+	graphicsDevice->commandList->ResourceBarrierTransition(D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_COPY_DEST, { oldposOutput->buffer, AOtex_old->buffer });
+	graphicsDevice->commandList->ResourceBarrierTransition(D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, outputtex_CS->buffer);
 
 
-
-
-
-	graphicsDevice->commandList->commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(oldposOutput->buffer, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_COPY_DEST));
-	graphicsDevice->commandList->commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(AOtex_old->buffer, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_COPY_DEST));
-
-	graphicsDevice->commandList->commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(outputtex_CS->buffer, D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATE_UNORDERED_ACCESS));
-
-
-
-
-
-
+	//BF_vertical
 	graphicsDevice->commandList->commandList->SetPipelineState(BFV_PS->pipelineState);
 	graphicsDevice->commandList->commandList->SetGraphicsRootSignature(BFV_RS->RS);
-
 	graphicsDevice->commandList->commandList->SetGraphicsRootDescriptorTable(0, mpSrvUavHeap->descriptorHeap->GetGPUDescriptorHandleForHeapStart());
-
-	graphicsDevice->commandList->commandList->RSSetViewports(1, &viewport); // set the viewports
-	graphicsDevice->commandList->commandList->RSSetScissorRects(1, &scissorRect); // set the scissor rects
-	graphicsDevice->commandList->commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	graphicsDevice->commandList->commandList->IASetVertexBuffers(0, 1, &emptyVB->bufferView);
-
-	graphicsDevice->commandList->commandList->DrawInstanced(6, 1, 0, 0);
+	graphicsDevice->commandList->DrawInstanced(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST, emptyVB, 6);
 
 
-
-
-
-
-
+	//BF_final
 	graphicsDevice->commandList->commandList->SetPipelineState(BF_PS->pipelineState);
 	graphicsDevice->commandList->commandList->SetGraphicsRootSignature(BF_RS->RS);
-
 	graphicsDevice->commandList->commandList->SetGraphicsRootDescriptorTable(0, mpSrvUavHeap->descriptorHeap->GetGPUDescriptorHandleForHeapStart());
-
-	graphicsDevice->commandList->commandList->RSSetViewports(1, &viewport); // set the viewports
-	graphicsDevice->commandList->commandList->RSSetScissorRects(1, &scissorRect); // set the scissor rects
-	graphicsDevice->commandList->commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	graphicsDevice->commandList->commandList->IASetVertexBuffers(0, 1, &emptyVB->bufferView);
-
-	graphicsDevice->commandList->commandList->DrawInstanced(6, 1, 0, 0);
+	graphicsDevice->commandList->DrawInstanced(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST, emptyVB, 6);
 
 
-
-
-
-
-
-
-
-	graphicsDevice->commandList->commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(outputtex_CS->buffer, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_COPY_SOURCE));
-	graphicsDevice->commandList->commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(graphicsDevice->backBuffer->renderTargets[graphicsDevice->frameIndex], D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_COPY_DEST));
+	graphicsDevice->commandList->ResourceBarrierTransition(D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_COPY_SOURCE, outputtex_CS->buffer);
+	graphicsDevice->commandList->ResourceBarrierTransition(D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_COPY_DEST, graphicsDevice->backBuffer->renderTargets[graphicsDevice->frameIndex]);
 	graphicsDevice->commandList->commandList->CopyResource(graphicsDevice->backBuffer->renderTargets[graphicsDevice->frameIndex], outputtex_CS->buffer);
-	graphicsDevice->commandList->commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(graphicsDevice->backBuffer->renderTargets[graphicsDevice->frameIndex], D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_PRESENT));
-
-    
-    
+	graphicsDevice->commandList->ResourceBarrierTransition(D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_PRESENT, graphicsDevice->backBuffer->renderTargets[graphicsDevice->frameIndex]);
     
 
     bool hh = graphicsDevice->commandList->CloseAndExecute(graphicsDevice->commandQueue);
@@ -830,239 +617,13 @@ void UpdatePipeline()
 }
 void Render()
 {
-    HRESULT hr;
-    //Sleep(400);
-
+	// Sleep(500);
     UpdatePipeline(); // update the pipeline by sending commands to the commandqueue
 
-    
-
-    d3d_call(graphicsDevice->swapChain->swapChain->Present(1, 0));
+    d3d_call(graphicsDevice->swapChain->swapChain->Present(0, 0)); // Present current frame
 }
 
 void Cleanup()
 {
 
 }
-
-//
-//// get the dxgi format equivilent of a wic format
-//DXGI_FORMAT GetDXGIFormatFromWICFormat(WICPixelFormatGUID& wicFormatGUID)
-//{
-//    if (wicFormatGUID == GUID_WICPixelFormat128bppRGBAFloat) return DXGI_FORMAT_R32G32B32A32_FLOAT;
-//    else if (wicFormatGUID == GUID_WICPixelFormat64bppRGBAHalf) return DXGI_FORMAT_R16G16B16A16_FLOAT;
-//    else if (wicFormatGUID == GUID_WICPixelFormat64bppRGBA) return DXGI_FORMAT_R16G16B16A16_UNORM;
-//    else if (wicFormatGUID == GUID_WICPixelFormat32bppRGBA) return DXGI_FORMAT_R8G8B8A8_UNORM;
-//    else if (wicFormatGUID == GUID_WICPixelFormat32bppBGRA) return DXGI_FORMAT_B8G8R8A8_UNORM;
-//    else if (wicFormatGUID == GUID_WICPixelFormat32bppBGR) return DXGI_FORMAT_B8G8R8X8_UNORM;
-//    else if (wicFormatGUID == GUID_WICPixelFormat32bppRGBA1010102XR) return DXGI_FORMAT_R10G10B10_XR_BIAS_A2_UNORM;
-//
-//    else if (wicFormatGUID == GUID_WICPixelFormat32bppRGBA1010102) return DXGI_FORMAT_R10G10B10A2_UNORM;
-//    else if (wicFormatGUID == GUID_WICPixelFormat16bppBGRA5551) return DXGI_FORMAT_B5G5R5A1_UNORM;
-//    else if (wicFormatGUID == GUID_WICPixelFormat16bppBGR565) return DXGI_FORMAT_B5G6R5_UNORM;
-//    else if (wicFormatGUID == GUID_WICPixelFormat32bppGrayFloat) return DXGI_FORMAT_R32_FLOAT;
-//    else if (wicFormatGUID == GUID_WICPixelFormat16bppGrayHalf) return DXGI_FORMAT_R16_FLOAT;
-//    else if (wicFormatGUID == GUID_WICPixelFormat16bppGray) return DXGI_FORMAT_R16_UNORM;
-//    else if (wicFormatGUID == GUID_WICPixelFormat8bppGray) return DXGI_FORMAT_R8_UNORM;
-//    else if (wicFormatGUID == GUID_WICPixelFormat8bppAlpha) return DXGI_FORMAT_A8_UNORM;
-//
-//    else return DXGI_FORMAT_UNKNOWN;
-//}
-//
-//// get a dxgi compatible wic format from another wic format
-//WICPixelFormatGUID GetConvertToWICFormat(WICPixelFormatGUID& wicFormatGUID)
-//{
-//    if (wicFormatGUID == GUID_WICPixelFormatBlackWhite) return GUID_WICPixelFormat8bppGray;
-//    else if (wicFormatGUID == GUID_WICPixelFormat1bppIndexed) return GUID_WICPixelFormat32bppRGBA;
-//    else if (wicFormatGUID == GUID_WICPixelFormat2bppIndexed) return GUID_WICPixelFormat32bppRGBA;
-//    else if (wicFormatGUID == GUID_WICPixelFormat4bppIndexed) return GUID_WICPixelFormat32bppRGBA;
-//    else if (wicFormatGUID == GUID_WICPixelFormat8bppIndexed) return GUID_WICPixelFormat32bppRGBA;
-//    else if (wicFormatGUID == GUID_WICPixelFormat2bppGray) return GUID_WICPixelFormat8bppGray;
-//    else if (wicFormatGUID == GUID_WICPixelFormat4bppGray) return GUID_WICPixelFormat8bppGray;
-//    else if (wicFormatGUID == GUID_WICPixelFormat16bppGrayFixedPoint) return GUID_WICPixelFormat16bppGrayHalf;
-//    else if (wicFormatGUID == GUID_WICPixelFormat32bppGrayFixedPoint) return GUID_WICPixelFormat32bppGrayFloat;
-//    else if (wicFormatGUID == GUID_WICPixelFormat16bppBGR555) return GUID_WICPixelFormat16bppBGRA5551;
-//    else if (wicFormatGUID == GUID_WICPixelFormat32bppBGR101010) return GUID_WICPixelFormat32bppRGBA1010102;
-//    else if (wicFormatGUID == GUID_WICPixelFormat24bppBGR) return GUID_WICPixelFormat32bppRGBA;
-//    else if (wicFormatGUID == GUID_WICPixelFormat24bppRGB) return GUID_WICPixelFormat32bppRGBA;
-//    else if (wicFormatGUID == GUID_WICPixelFormat32bppPBGRA) return GUID_WICPixelFormat32bppRGBA;
-//    else if (wicFormatGUID == GUID_WICPixelFormat32bppPRGBA) return GUID_WICPixelFormat32bppRGBA;
-//    else if (wicFormatGUID == GUID_WICPixelFormat48bppRGB) return GUID_WICPixelFormat64bppRGBA;
-//    else if (wicFormatGUID == GUID_WICPixelFormat48bppBGR) return GUID_WICPixelFormat64bppRGBA;
-//    else if (wicFormatGUID == GUID_WICPixelFormat64bppBGRA) return GUID_WICPixelFormat64bppRGBA;
-//    else if (wicFormatGUID == GUID_WICPixelFormat64bppPRGBA) return GUID_WICPixelFormat64bppRGBA;
-//    else if (wicFormatGUID == GUID_WICPixelFormat64bppPBGRA) return GUID_WICPixelFormat64bppRGBA;
-//    else if (wicFormatGUID == GUID_WICPixelFormat48bppRGBFixedPoint) return GUID_WICPixelFormat64bppRGBAHalf;
-//    else if (wicFormatGUID == GUID_WICPixelFormat48bppBGRFixedPoint) return GUID_WICPixelFormat64bppRGBAHalf;
-//    else if (wicFormatGUID == GUID_WICPixelFormat64bppRGBAFixedPoint) return GUID_WICPixelFormat64bppRGBAHalf;
-//    else if (wicFormatGUID == GUID_WICPixelFormat64bppBGRAFixedPoint) return GUID_WICPixelFormat64bppRGBAHalf;
-//    else if (wicFormatGUID == GUID_WICPixelFormat64bppRGBFixedPoint) return GUID_WICPixelFormat64bppRGBAHalf;
-//    else if (wicFormatGUID == GUID_WICPixelFormat64bppRGBHalf) return GUID_WICPixelFormat64bppRGBAHalf;
-//    else if (wicFormatGUID == GUID_WICPixelFormat48bppRGBHalf) return GUID_WICPixelFormat64bppRGBAHalf;
-//    else if (wicFormatGUID == GUID_WICPixelFormat128bppPRGBAFloat) return GUID_WICPixelFormat128bppRGBAFloat;
-//    else if (wicFormatGUID == GUID_WICPixelFormat128bppRGBFloat) return GUID_WICPixelFormat128bppRGBAFloat;
-//    else if (wicFormatGUID == GUID_WICPixelFormat128bppRGBAFixedPoint) return GUID_WICPixelFormat128bppRGBAFloat;
-//    else if (wicFormatGUID == GUID_WICPixelFormat128bppRGBFixedPoint) return GUID_WICPixelFormat128bppRGBAFloat;
-//    else if (wicFormatGUID == GUID_WICPixelFormat32bppRGBE) return GUID_WICPixelFormat128bppRGBAFloat;
-//    else if (wicFormatGUID == GUID_WICPixelFormat32bppCMYK) return GUID_WICPixelFormat32bppRGBA;
-//    else if (wicFormatGUID == GUID_WICPixelFormat64bppCMYK) return GUID_WICPixelFormat64bppRGBA;
-//    else if (wicFormatGUID == GUID_WICPixelFormat40bppCMYKAlpha) return GUID_WICPixelFormat64bppRGBA;
-//    else if (wicFormatGUID == GUID_WICPixelFormat80bppCMYKAlpha) return GUID_WICPixelFormat64bppRGBA;
-//
-//#if (_WIN32_WINNT >= _WIN32_WINNT_WIN8) || defined(_WIN7_PLATFORM_UPDATE)
-//    else if (wicFormatGUID == GUID_WICPixelFormat32bppRGB) return GUID_WICPixelFormat32bppRGBA;
-//    else if (wicFormatGUID == GUID_WICPixelFormat64bppRGB) return GUID_WICPixelFormat64bppRGBA;
-//    else if (wicFormatGUID == GUID_WICPixelFormat64bppPRGBAHalf) return GUID_WICPixelFormat64bppRGBAHalf;
-//#endif
-//
-//    else return GUID_WICPixelFormatDontCare;
-//}
-//
-//// get the number of bits per pixel for a dxgi format
-//int GetDXGIFormatBitsPerPixel(DXGI_FORMAT& dxgiFormat)
-//{
-//    if (dxgiFormat == DXGI_FORMAT_R32G32B32A32_FLOAT) return 128;
-//    else if (dxgiFormat == DXGI_FORMAT_R16G16B16A16_FLOAT) return 64;
-//    else if (dxgiFormat == DXGI_FORMAT_R16G16B16A16_UNORM) return 64;
-//    else if (dxgiFormat == DXGI_FORMAT_R8G8B8A8_UNORM) return 32;
-//    else if (dxgiFormat == DXGI_FORMAT_B8G8R8A8_UNORM) return 32;
-//    else if (dxgiFormat == DXGI_FORMAT_B8G8R8X8_UNORM) return 32;
-//    else if (dxgiFormat == DXGI_FORMAT_R10G10B10_XR_BIAS_A2_UNORM) return 32;
-//
-//    else if (dxgiFormat == DXGI_FORMAT_R10G10B10A2_UNORM) return 32;
-//    else if (dxgiFormat == DXGI_FORMAT_B5G5R5A1_UNORM) return 16;
-//    else if (dxgiFormat == DXGI_FORMAT_B5G6R5_UNORM) return 16;
-//    else if (dxgiFormat == DXGI_FORMAT_R32_FLOAT) return 32;
-//    else if (dxgiFormat == DXGI_FORMAT_R16_FLOAT) return 16;
-//    else if (dxgiFormat == DXGI_FORMAT_R16_UNORM) return 16;
-//    else if (dxgiFormat == DXGI_FORMAT_R8_UNORM) return 8;
-//    else if (dxgiFormat == DXGI_FORMAT_A8_UNORM) return 8;
-//}
-//
-//// load and decode image from file
-//int LoadImageDataFromFile(BYTE** imageData, D3D12_RESOURCE_DESC& resourceDescription, LPCWSTR filename, int &bytesPerRow)
-//{
-//    HRESULT hr;
-//
-//    // we only need one instance of the imaging factory to create decoders and frames
-//    static IWICImagingFactory *wicFactory;
-//
-//    // reset decoder, frame and converter since these will be different for each image we load
-//    IWICBitmapDecoder *wicDecoder = NULL;
-//    IWICBitmapFrameDecode *wicFrame = NULL;
-//    IWICFormatConverter *wicConverter = NULL;
-//
-//    bool imageConverted = false;
-//
-//    if (wicFactory == NULL)
-//    {
-//        // Initialize the COM library
-//        CoInitialize(NULL);
-//
-//        // create the WIC factory
-//        hr = CoCreateInstance(
-//            CLSID_WICImagingFactory,
-//            NULL,
-//            CLSCTX_INPROC_SERVER,
-//            IID_PPV_ARGS(&wicFactory)
-//        );
-//        if (FAILED(hr)) return 0;
-//    }
-//
-//    // load a decoder for the image
-//    hr = wicFactory->CreateDecoderFromFilename(
-//        filename,                        // Image we want to load in
-//        NULL,                            // This is a vendor ID, we do not prefer a specific one so set to null
-//        GENERIC_READ,                    // We want to read from this file
-//        WICDecodeMetadataCacheOnLoad,    // We will cache the metadata right away, rather than when needed, which might be unknown
-//        &wicDecoder                      // the wic decoder to be created
-//    );
-//    if (FAILED(hr)) return 0;
-//
-//    // get image from decoder (this will decode the "frame")
-//    hr = wicDecoder->GetFrame(0, &wicFrame);
-//    if (FAILED(hr)) return 0;
-//
-//    // get wic pixel format of image
-//    WICPixelFormatGUID pixelFormat;
-//    hr = wicFrame->GetPixelFormat(&pixelFormat);
-//    if (FAILED(hr)) return 0;
-//
-//    // get size of image
-//    UINT textureWidth, textureHeight;
-//    hr = wicFrame->GetSize(&textureWidth, &textureHeight);
-//    if (FAILED(hr)) return 0;
-//
-//    // we are not handling sRGB types in this tutorial, so if you need that support, you'll have to figure
-//    // out how to implement the support yourself
-//
-//    // convert wic pixel format to dxgi pixel format
-//    DXGI_FORMAT dxgiFormat = GetDXGIFormatFromWICFormat(pixelFormat);
-//
-//    // if the format of the image is not a supported dxgi format, try to convert it
-//    if (dxgiFormat == DXGI_FORMAT_UNKNOWN)
-//    {
-//        // get a dxgi compatible wic format from the current image format
-//        WICPixelFormatGUID convertToPixelFormat = GetConvertToWICFormat(pixelFormat);
-//
-//        // return if no dxgi compatible format was found
-//        if (convertToPixelFormat == GUID_WICPixelFormatDontCare) return 0;
-//
-//        // set the dxgi format
-//        dxgiFormat = GetDXGIFormatFromWICFormat(convertToPixelFormat);
-//
-//        // create the format converter
-//        hr = wicFactory->CreateFormatConverter(&wicConverter);
-//        if (FAILED(hr)) return 0;
-//
-//        // make sure we can convert to the dxgi compatible format
-//        BOOL canConvert = FALSE;
-//        hr = wicConverter->CanConvert(pixelFormat, convertToPixelFormat, &canConvert);
-//        if (FAILED(hr) || !canConvert) return 0;
-//
-//        // do the conversion (wicConverter will contain the converted image)
-//        hr = wicConverter->Initialize(wicFrame, convertToPixelFormat, WICBitmapDitherTypeErrorDiffusion, 0, 0, WICBitmapPaletteTypeCustom);
-//        if (FAILED(hr)) return 0;
-//
-//        // this is so we know to get the image data from the wicConverter (otherwise we will get from wicFrame)
-//        imageConverted = true;
-//    }
-//
-//    int bitsPerPixel = GetDXGIFormatBitsPerPixel(dxgiFormat); // number of bits per pixel
-//    bytesPerRow = (textureWidth * bitsPerPixel) / 8; // number of bytes in each row of the image data
-//    int imageSize = bytesPerRow * textureHeight; // total image size in bytes
-//
-//    // allocate enough memory for the raw image data, and set imageData to point to that memory
-//    *imageData = (BYTE*)malloc(imageSize);
-//
-//    // copy (decoded) raw image data into the newly allocated memory (imageData)
-//    if (imageConverted)
-//    {
-//        // if image format needed to be converted, the wic converter will contain the converted image
-//        hr = wicConverter->CopyPixels(0, bytesPerRow, imageSize, *imageData);
-//        if (FAILED(hr)) return 0;
-//    }
-//    else
-//    {
-//        // no need to convert, just copy data from the wic frame
-//        hr = wicFrame->CopyPixels(0, bytesPerRow, imageSize, *imageData);
-//        if (FAILED(hr)) return 0;
-//    }
-//
-//    // now describe the texture with the information we have obtained from the image
-//    resourceDescription = {};
-//    resourceDescription.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
-//    resourceDescription.Alignment = 0; // may be 0, 4KB, 64KB, or 4MB. 0 will let runtime decide between 64KB and 4MB (4MB for multi-sampled textures)
-//    resourceDescription.Width = textureWidth; // width of the texture
-//    resourceDescription.Height = textureHeight; // height of the texture
-//    resourceDescription.DepthOrArraySize = 1; // if 3d image, depth of 3d image. Otherwise an array of 1D or 2D textures (we only have one image, so we set 1)
-//    resourceDescription.MipLevels = 1; // Number of mipmaps. We are not generating mipmaps for this texture, so we have only one level
-//    resourceDescription.Format = dxgiFormat; // This is the dxgi format of the image (format of the pixels)
-//    resourceDescription.SampleDesc.Count = 1; // This is the number of samples per pixel, we just want 1 sample
-//    resourceDescription.SampleDesc.Quality = 0; // The quality level of the samples. Higher is better quality, but worse performance
-//    resourceDescription.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN; // The arrangement of the pixels. Setting to unknown lets the driver choose the most efficient one
-//    resourceDescription.Flags = D3D12_RESOURCE_FLAG_NONE; // no flags
-//
-//    // return the size of the image. remember to delete the image once your done with it (in this tutorial once its uploaded to the gpu)
-//    return imageSize;
-//}

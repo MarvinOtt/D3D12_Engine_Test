@@ -4,6 +4,7 @@ Texture2D<float4> colortex : register(t1);
 Texture2D<float4> normaltex : register(t2);
 Texture2D<float> depthtex : register(t3);
 RWTexture2D<float4> outputtex : register(u1);
+RWTexture2D<float> AOtex_F : register(u2);
 
 float gaussian(float x, float sigma)
 {
@@ -32,13 +33,14 @@ void main(float4 pos : SV_POSITION)
 	float finalAO = 0.f;
 
 	// Consts
-	const float sigmaI = 1.5f;
-	const float sigmaS = 30.0f;
-	const float sigmaN = 10.f;
-	const float sigmaD = 0.06f;
+	const float sigmaI = 2.0f;
+	const float sigmaS = 20.0f;
+	const float sigmaN = 20.f;
+	const float sigmaD = 0.1f * 1;
+	const float sigmaDD = 50.f;
 
 	float wP = 0;
-	int diameter = 60;
+	int diameter = 41;
 	int radius = diameter / 2;
 
 	if (length(normaltex[xy].xyz) < 0.05f)
@@ -48,22 +50,50 @@ void main(float4 pos : SV_POSITION)
 	else
 	{
 		float AOxy = AOtex_OUT[xy].x;
-		for (int i = 0; i < diameter; i++)
+		float minStr = 1.f;
+		float curdistchange = 0.f;
+		for (int i = radius - 1; i >= 0; i--)
 		{
 			uint2 neighbor = uint2(xy.x - (radius - i), xy.y);
 			float AOn = AOtex_OUT[neighbor].x;
-			float gi = max(1.f - abs((AOn - AOxy) / sigmaI), 0.0f);
+			float gi = gaussian(AOn - AOxy, sigmaI); // max(1.f - abs((AOn - AOxy) / sigmaI), 0.0f);
 			float gs = gaussian(radius - i, sigmaS);
 			float gn = pow(getNormalSim(normaltex[xy].xyz, normaltex[neighbor].xyz), sigmaN);
 			float gd = max(1.f - abs((depthtex[xy].x - depthtex[neighbor].x) / (sigmaD - (1 / (1 + depthtex[xy].x * 0.7f)) * sigmaD * 0.9f)), 0.f);
-			float w = (gi * gs *gn * gd);
+			float newdistchange = (depthtex[xy].x - depthtex[neighbor].x);
+			if (i == radius - 1)
+				curdistchange = newdistchange;
+			minStr = min(minStr, 1.f / (1.f + abs(newdistchange - curdistchange) * sigmaDD));
+			curdistchange = newdistchange;
+			float w = (gi * gs * gn * gd) * minStr;
+			finalAO += AOn * w;
+			wP += w;
+		}
+		minStr = 1.f;
+		for (int i = radius; i < diameter; i++)
+		{
+			uint2 neighbor = uint2(xy.x - (radius - i), xy.y);
+			float AOn = AOtex_OUT[neighbor].x;
+			float gi = gaussian(AOn - AOxy, sigmaI); // max(1.f - abs((AOn - AOxy) / sigmaI), 0.0f);
+			float gs = gaussian(radius - i, sigmaS);
+			float gn = pow(getNormalSim(normaltex[xy].xyz, normaltex[neighbor].xyz), sigmaN);
+			float gd = max(1.f - abs((depthtex[xy].x - depthtex[neighbor].x) / (sigmaD - (1 / (1 + depthtex[xy].x * 0.7f)) * sigmaD * 0.9f)), 0.f);
+			float newdistchange = (depthtex[xy].x - depthtex[neighbor].x);
+			if (i == radius)
+				curdistchange = newdistchange;
+			minStr = min(minStr, 1.f / (1.f + abs(newdistchange - curdistchange) * sigmaDD));
+			curdistchange = newdistchange;
+			float w = (gi * gs * gn * gd) * minStr;
 			finalAO += AOn * w;
 			wP += w;
 		}
 		finalAO = (finalAO / wP);
+		finalAO = pow(finalAO, 1.005f);
+		//finalAO = AOxy;
 		//finalAO = AOtex_OUT[xy].x;
 		float noise = lerp(-0.5, 0.5, InterleavedGradientNoise(xy)) * 2.0f; //or other noise method
 		//AOtex_vertical[xy] = (finalAO/* + noise / 255.f*/);
+		AOtex_F[xy] = float4(finalAO, 0, 0, 0);
 		outputtex[xy] = colortex[xy] * (finalAO + noise / 255.f);
 		//outputtex[xy] = float4(abs(normaltex[xy].y), 0, 0, 1);
 	}

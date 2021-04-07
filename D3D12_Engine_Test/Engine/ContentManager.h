@@ -3,6 +3,8 @@
 #include <dxgi1_4.h>
 
 class Texture2D;
+class GraphicsDevice;
+class DescriptorHeap;
 
 class ContentManager
 {
@@ -15,6 +17,6 @@ private:
 
 public:
 	ContentManager();
-	Texture2D* LoadTexture2D(LPCWSTR location);
+	Texture2D* LoadTexture2D(GraphicsDevice* graphicsdevice, LPCWSTR location, DescriptorHeap* heap, int heapindex);
 };
 

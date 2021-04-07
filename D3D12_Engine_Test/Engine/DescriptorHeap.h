@@ -16,11 +16,12 @@ public:
 
 private:
 	HRESULT hr;
+	GraphicsDevice* device;
 
 public:
 	DescriptorHeap();
 	DescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE, D3D12_DESCRIPTOR_HEAP_FLAGS);
 	bool Create(GraphicsDevice*, int);
-    bool SetTexture2D(GraphicsDevice* device, Texture2D* tex, int index);
-    bool SetSRV(GraphicsDevice* device, D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc, int index);
+    bool SetTexture2D(Texture2D* tex, int index);
+    bool SetSRV(D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc, int index);
 };

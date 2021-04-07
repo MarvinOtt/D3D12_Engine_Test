@@ -1,5 +1,6 @@
 #include "Buffer.h"
 #include "GraphicsDevice.h"
+#include "d3dx12.h"
 
 
 Buffer::Buffer(GraphicsDevice* device, UINT64 buffersize, D3D12_RESOURCE_FLAGS flags, D3D12_RESOURCE_STATES initState, D3D12_HEAP_TYPE heap_type)
@@ -32,4 +33,12 @@ Buffer::Buffer(GraphicsDevice* device, UINT64 buffersize, D3D12_RESOURCE_FLAGS f
         nullptr, // optimized clear value must be null for this type of resource. used for render targets and depth/stencil buffers
         IID_PPV_ARGS(&buffer));
 
+}
+
+void Buffer::SetData(void* data)
+{
+	uint8_t* pData;
+	d3d_call(buffer->Map(0, nullptr, (void**)&pData));
+	memcpy(pData, data, bufferSize);
+	buffer->Unmap(0, nullptr);
 }

@@ -3,6 +3,7 @@
 #include "Buffer.h"
 #include "DXR_PipelineState.h"
 #include "DXR_ACS_TOP.h"
+#include "DXR_ACS_OBJ.h"
 
 DXR_ShaderTable::DXR_ShaderTable(DXR_ACS_TOP* acs_top2)
 {
@@ -13,11 +14,12 @@ DXR_ShaderTable::DXR_ShaderTable(DXR_ACS_TOP* acs_top2)
 
     // Get geometry size
     int count = 0;
-    for (int i = 0; i < acs_top->ACS_buffers.size(); ++i)
+    for (int i = 0; i < acs_top->ACS_OBJ_buffers.size(); ++i)
     {
-        count += acs_top->ACS_buffers[i]->geomDesc.size();
+        count += acs_top->ACS_OBJ_buffers[i]->ACS_BOT->geomDesc.size();
     }
     geomData = new UINT64*[count * acs_top->numberOfRays];
+	geomHitGroup = new LPCWSTR[count * acs_top->numberOfRays];
 }
 
 bool DXR_ShaderTable::SetRayGenShader(LPCWSTR name, UINT64* data, int datasize)
@@ -50,7 +52,7 @@ bool DXR_ShaderTable::Create(GraphicsDevice* device2, DXR_PipelineState* pipelin
     {
         int cursize = 0;
         D3D12_ROOT_SIGNATURE_DESC cur_RS = pipelineState->shaderRS_Pairs[i].rootSignature;
-        for (int j = 0; j < cur_RS.NumParameters; ++j)
+        for (UINT j = 0; j < cur_RS.NumParameters; ++j)
         {
             if (cur_RS.pParameters[j].ParameterType == D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS)
                 cursize += 4;
@@ -63,9 +65,9 @@ bool DXR_ShaderTable::Create(GraphicsDevice* device2, DXR_PipelineState* pipelin
 
     // Get number of entrys
     int totalgeometries = 0;
-    for (int i = 0; i < acs_top->ACS_buffers.size(); ++i)
+    for (int i = 0; i < acs_top->ACS_OBJ_buffers.size(); ++i)
     {
-        totalgeometries += acs_top->ACS_buffers[i]->geomDesc.size();
+        totalgeometries += acs_top->ACS_OBJ_buffers[i]->ACS_BOT->geomDesc.size();
     }
     entryNumber = 1 + acs_top->numberOfRays + totalgeometries * acs_top->numberOfRays;
 
@@ -134,14 +136,14 @@ bool DXR_ShaderTable::Create(GraphicsDevice* device2, DXR_PipelineState* pipelin
     // Hits
     hitIndex = curindex;
     int geomcount = 0;
-    for (int i = 0; i < acs_top->ACS_buffers.size(); ++i)
+    for (int i = 0; i < acs_top->ACS_OBJ_buffers.size(); ++i)
     {
-        for (int k = 0; k < acs_top->ACS_buffers[i]->geomDesc.size(); ++k)
+        for (int k = 0; k < acs_top->ACS_OBJ_buffers[i]->ACS_BOT->geomDesc.size(); ++k)
         {
             for (int l = 0; l < acs_top->numberOfRays; ++l)
             {
                 pEntry = pData + shaderTableEntrySize * (curindex++);
-                LPCWSTR curHitGroup = acs_top->hitGroups[i][k * acs_top->numberOfRays + l];
+                LPCWSTR curHitGroup = geomHitGroup[geomcount * acs_top->numberOfRays + l];
                 memcpy(pEntry, pRtsoProps->GetShaderIdentifier(curHitGroup), D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES);
                 pDesc = pEntry + D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES;
                 int curdatacount = 0;
@@ -182,9 +184,10 @@ void DXR_ShaderTable::UploadingFinished()
     device->commandList->CommandListFinished->unsubscribe(L"UploadingFinished");
 }
 
-bool DXR_ShaderTable::SetGeomData(int geomindex, int rayindex, UINT64* data)
+bool DXR_ShaderTable::SetGeomData(DXR_ACS_OBJ* geom, int rayindex, UINT64* data, LPCWSTR hitGroup)
 {
-    geomData[geomindex * acs_top->numberOfRays + rayindex] = data;
+    geomData[geom->ACS_TOP_index * acs_top->numberOfRays + rayindex] = data;
+	geomHitGroup[geom->ACS_TOP_index * acs_top->numberOfRays + rayindex] = hitGroup;
     return true;
 }
 

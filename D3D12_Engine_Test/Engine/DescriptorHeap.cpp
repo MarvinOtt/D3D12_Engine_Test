@@ -13,8 +13,9 @@ DescriptorHeap::DescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE type, D3D12_DESCRIPTOR
     descriptorFlags = flags;
 }
 
-bool DescriptorHeap::Create(GraphicsDevice* device, int num)
+bool DescriptorHeap::Create(GraphicsDevice* device, int num)	
 {
+	this->device = device;
 	descriptorNum = num;
 	D3D12_DESCRIPTOR_HEAP_DESC rtvHeapDesc = {};
 	rtvHeapDesc.NumDescriptors = descriptorNum; // number of descriptors for this heap.
@@ -30,9 +31,11 @@ bool DescriptorHeap::Create(GraphicsDevice* device, int num)
 	// descriptor sizes may vary from device to device, which is why there is no set size and we must ask the 
 	// device to give us the size. we will use this size to increment a descriptor handle offset
 	descriptorSize = device->device->GetDescriptorHandleIncrementSize(descriptorType);
+
+	return true;
 }
 
-bool DescriptorHeap::SetTexture2D(GraphicsDevice* device, Texture2D* tex, int index)
+bool DescriptorHeap::SetTexture2D(Texture2D* tex, int index)
 {
     if (descriptorType != D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV)
         return false;
@@ -46,7 +49,7 @@ bool DescriptorHeap::SetTexture2D(GraphicsDevice* device, Texture2D* tex, int in
     return true;
 }
 
-bool DescriptorHeap::SetSRV(GraphicsDevice* device, D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc, int index)
+bool DescriptorHeap::SetSRV(D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc, int index)
 {
     if (descriptorType != D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV)
         return false;

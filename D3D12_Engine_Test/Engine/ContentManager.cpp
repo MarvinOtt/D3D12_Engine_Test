@@ -1,7 +1,8 @@
 #include "ContentManager.h"
-#include "d3dx12.h"
 #include <wincodec.h>
 #include "Texture2D.h"
+#include "GraphicsDevice.h"
+#include "DescriptorHeap.h"
 
 #include <iostream>
 #include <fstream>
@@ -14,13 +15,27 @@ ContentManager::ContentManager()
 
 }
 
-Texture2D* ContentManager::LoadTexture2D(LPCWSTR location)
+int LoadImageDataFromFile(BYTE** imageData, D3D12_RESOURCE_DESC& resourceDescription, LPCWSTR filename, int &bytesPerRow);
+
+Texture2D* ContentManager::LoadTexture2D(GraphicsDevice* graphicsdevice, LPCWSTR location, DescriptorHeap* heap, int heapindex)
 {
 	if (GetFileAttributes(location) == INVALID_FILE_ATTRIBUTES)
 		return nullptr;
 
-	Texture2D* newtex = new Texture2D();
-	Texture2D* dsa = new Texture2D();
+	// Load the image from file
+	D3D12_RESOURCE_DESC textureDesc;
+	int imageBytesPerRow;
+	BYTE* imageData;
+	int imageSize = LoadImageDataFromFile(&imageData, textureDesc, location, imageBytesPerRow);
+
+	// make sure we have data
+	if (imageSize <= 0)
+		return nullptr;
+
+	// TODO: Change Texture Name
+	Texture2D* newtex = new Texture2D(L"Test");
+	newtex->Create(graphicsdevice, textureDesc);
+	newtex->SetData(graphicsdevice, imageData, imageSize, heap, heapindex);
 	
 }
 

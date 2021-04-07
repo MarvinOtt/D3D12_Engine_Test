@@ -3,6 +3,7 @@
 #include "DXR_RootSignature.h"
 #include "Shader.h"
 #include "SwapChain.h"
+#include "d3dx12.h"
 
 
 

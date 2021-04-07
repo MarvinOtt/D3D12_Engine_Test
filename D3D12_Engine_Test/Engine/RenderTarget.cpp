@@ -2,6 +2,7 @@
 #include "RenderTarget.h"
 #include "DescriptorHeap.h"
 #include "SwapChain.h"
+#include "d3dx12.h"
 
 RenderTarget::RenderTarget()
 {}
