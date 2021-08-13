@@ -1,13 +1,14 @@
 
 #include "GraphicsDevice.h"
-#include "RenderTarget.h"
-#include "CommandAllocator.h"
-#include "CommandQueue.h"
-#include "CommandList.h"
+#include "texture/RenderTarget.h"
+#include "command/CommandAllocator.h"
+#include "command/CommandQueue.h"
+#include "command/CommandList.h"
 #include "Fence.h"
 #include "DescriptorHeap.h"
 #include "SwapChain.h"
-#include "d3dx12.h"
+#include "../include/d3dx12.h"
+#include "../include/Framework.h"
 
 using namespace Microsoft::WRL;
 
@@ -27,6 +28,7 @@ bool GraphicsDevice::Create()
 		return false;
 
 	// Enable the D3D12 debug layer.
+#ifdef _DEBUG 
 	{
 		ComPtr<ID3D12Debug> debugController;
 		if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&debugController))))
@@ -34,6 +36,7 @@ bool GraphicsDevice::Create()
 			debugController->EnableDebugLayer();
 		}
 	}
+#endif
 	IDXGIAdapter1* adapter; // adapters are the graphics card (this includes the embedded graphics on the motherboard)
 	int adapterIndex = 0; // we'll start looking for directx 12  compatible graphics devices starting at index 0
 	bool adapterFound = false; // set this to true when a good one was found
@@ -57,8 +60,8 @@ bool GraphicsDevice::Create()
 			HRESULT hr = pDevice->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS5, &features5, sizeof(D3D12_FEATURE_DATA_D3D12_OPTIONS5));
 			if (FAILED(hr) || features5.RaytracingTier == D3D12_RAYTRACING_TIER_NOT_SUPPORTED)
 			{
-				//msgBox("Raytracing is not supported on this device. Make sure your GPU supports DXR (such as Nvidia's Volta or Turing RTX) and you're on the latest drivers. The DXR fallback layer is not supported.");
-				exit(1);
+				msgBox("Raytracing is not supported on this device. Make sure your GPU supports DXR (such as Nvidia's Volta or Turing RTX) and you're on the latest drivers. The DXR fallback layer is not supported.");
+				//exit(1);
 			}
 			adapterFound = true;
 			break;
@@ -116,7 +119,63 @@ bool GraphicsDevice::Create()
 		fences[i] = Fence();
 		fences[i].Create(this);
 	}
+
+	viewport.TopLeftX = 0;
+	viewport.TopLeftY = 0;
+	viewport.Width = (float)bufferWidth;
+	viewport.Height = (float)bufferHeight;
+	viewport.MinDepth = 0.0f;
+	viewport.MaxDepth = 1.0f;
+
+	scissorRect.left = 0;
+	scissorRect.top = 0;
+	scissorRect.right = (long)bufferWidth;
+	scissorRect.bottom = (long)bufferHeight;
 	
+	return true;
+}
+void GraphicsDevice::flushGpu()
+{
+	for (int i = 0; i < frameBufferCount; i++)
+	{
+		uint64_t fenceValueForSignal = ++fences[i].fenceValue;
+		commandQueue->commandQueue->Signal(fences[i].fence, fenceValueForSignal);
+		if (fences[i].fence->GetCompletedValue() < fences[i].fenceValue)
+		{
+			fences[i].fence->SetEventOnCompletion(fenceValueForSignal, fences[i].fenceEvent);
+			WaitForSingleObject(fences[i].fenceEvent, INFINITE);
+		}
+	}
+	frameIndex = 0;
+}
+
+bool GraphicsDevice::ResizeBackBuffer(UINT width, UINT height)
+{
+	bufferWidth = width;
+	bufferHeight = height;
+	//WaitForEventCompletion(frameIndex);
+	flushGpu();
+
+	for (int i = 0; i < frameBufferCount; ++i)
+	{
+		backBuffer->renderTargets[i]->Release();
+	}
+	
+	d3d_call(swapChain->swapChain->ResizeBuffers(0, 0, 0, DXGI_FORMAT_UNKNOWN, NULL));
+	backBuffer->Create(this, bufferWidth, bufferHeight, dsHeap);
+
+	viewport.TopLeftX = 0;
+	viewport.TopLeftY = 0;
+	viewport.Width = (float)bufferWidth;
+	viewport.Height = (float)bufferHeight;
+	viewport.MinDepth = 0.0f;
+	viewport.MaxDepth = 1.0f;
+
+	scissorRect.left = 0;
+	scissorRect.top = 0;
+	scissorRect.right = bufferWidth;
+	scissorRect.bottom = bufferHeight;
+
 	return true;
 }
 
@@ -132,5 +191,27 @@ bool GraphicsDevice::WaitForEventCompletion(int index)
 		listener();
 	}
 
+	return true;
+}
+
+bool GraphicsDevice::CloseExecuteWait()
+{
+	commandList->CloseAndExecute(commandQueue);
+
+	fences[frameIndex].fenceValue++;
+	commandQueue->commandQueue->Signal(fences[frameIndex].fence, fences[frameIndex].fenceValue);
+
+	WaitForEventCompletion(frameIndex);
+	return true;
+}
+
+bool GraphicsDevice::ResetCommandList()
+{
+	hr = commandAllocator[frameIndex].commandAllocator->Reset();
+	if (FAILED(hr))
+		return false;
+	hr = commandList->commandList->Reset(commandAllocator[frameIndex].commandAllocator, nullptr);
+	if (FAILED(hr))
+		return false;
 	return true;
 }

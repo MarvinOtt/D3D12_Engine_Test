@@ -1,7 +1,6 @@
 #pragma once
 #include <d3d12.h>
 #include <dxgi1_4.h>
-#include "Framework.h"
 
 class CommandAllocator;
 class CommandQueue;
@@ -27,6 +26,9 @@ public:
 	DescriptorHeap* dsHeap;
 	RenderTarget* backBuffer;
 
+	D3D12_VIEWPORT viewport;
+	D3D12_RECT scissorRect;
+
 
 
 	int bufferWidth, bufferHeight;
@@ -38,7 +40,11 @@ private:
 public:
 	GraphicsDevice(HWND, int, int);
 	bool WaitForEventCompletion(int index);
+	bool CloseExecuteWait();
+	bool ResetCommandList();
 	bool Create();
+	bool ResizeBackBuffer(UINT width, UINT height);
+	void flushGpu();
 };
 
 

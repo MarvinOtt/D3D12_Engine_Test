@@ -1,6 +1,9 @@
 #include "DescriptorHeap.h"
 #include "GraphicsDevice.h"
-#include "Texture2D.h"
+#include "texture/Texture1D.h"
+#include "texture/Texture2D.h"
+#include "texture/Texture3D.h"
+#include "buffer/Buffer.h"
 
 DescriptorHeap::DescriptorHeap()
 {
@@ -42,6 +45,52 @@ bool DescriptorHeap::SetTexture2D(Texture2D* tex, int index)
 
 	D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
 	uavDesc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2D;
+
+	D3D12_CPU_DESCRIPTOR_HANDLE Handle = descriptorHeap->GetCPUDescriptorHandleForHeapStart();
+	Handle.ptr += device->device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV) * index;
+	device->device->CreateUnorderedAccessView(tex->buffer, nullptr, &uavDesc, Handle);
+	return true;
+}
+
+bool DescriptorHeap::SetTexture3D(Texture3D* tex, int index)
+{
+	if (descriptorType != D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV)
+		return false;
+
+	D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
+	uavDesc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE3D;
+	uavDesc.Format = tex->desc.Format;
+	uavDesc.Texture3D.WSize = tex->desc.DepthOrArraySize;
+
+	D3D12_CPU_DESCRIPTOR_HANDLE Handle = descriptorHeap->GetCPUDescriptorHandleForHeapStart();
+	Handle.ptr += device->device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV) * index;
+	device->device->CreateUnorderedAccessView(tex->buffer, nullptr, &uavDesc, Handle);
+	return true;
+}
+
+bool DescriptorHeap::SetBuffer(Buffer* buf, int index)
+{
+	if (descriptorType != D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV)
+		return false;
+
+	D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
+	uavDesc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
+	uavDesc.Format = buf->format;
+
+	D3D12_CPU_DESCRIPTOR_HANDLE Handle = descriptorHeap->GetCPUDescriptorHandleForHeapStart();
+	Handle.ptr += device->device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV) * index;
+	device->device->CreateUnorderedAccessView(buf->buffer, nullptr, &uavDesc, Handle);
+	return true;
+}
+
+bool DescriptorHeap::SetTexture1D(Texture1D* tex, int index)
+{
+	if (descriptorType != D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV)
+		return false;
+
+	D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
+	uavDesc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE1D;
+	uavDesc.Format = tex->desc.Format;
 
 	D3D12_CPU_DESCRIPTOR_HANDLE Handle = descriptorHeap->GetCPUDescriptorHandleForHeapStart();
 	Handle.ptr += device->device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV) * index;

@@ -109,11 +109,12 @@
       <SDLCheck>true</SDLCheck>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <DisableSpecificWarnings>4996</DisableSpecificWarnings>
+      <AdditionalIncludeDirectories>Engine/;include/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>D3D12.lib;DXGI.lib;d3dcompiler.lib;dxguid.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>D3D12.lib;DXGI.lib;d3dcompiler.lib;dxguid.lib;shcore.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>
@@ -153,144 +154,150 @@
       <MultiProcessorCompilation>false</MultiProcessorCompilation>
       <DisableSpecificWarnings>4267;4996</DisableSpecificWarnings>
       <LanguageStandard>stdcpp17</LanguageStandard>
+      <AdditionalIncludeDirectories>Engine\;include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <DebugInformationFormat>None</DebugInformationFormat>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>D3D12.lib;DXGI.lib;d3dcompiler.lib;dxguid.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>D3D12.lib;DXGI.lib;d3dcompiler.lib;dxguid.lib;shcore.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
-  <ItemGroup>
-    <ClInclude Include="D3D12_Engine.h" />
-    <ClInclude Include="D3D12_Engine_Test.h" />
-    <ClInclude Include="d3dx12.h" />
-    <ClInclude Include="Engine\Buffer.h" />
-    <ClInclude Include="Engine\CommandAllocator.h" />
-    <ClInclude Include="Engine\CommandList.h" />
-    <ClInclude Include="Engine\CommandQueue.h" />
-    <ClInclude Include="Engine\ConstantBuffer.h" />
-    <ClInclude Include="Engine\ContentManager.h" />
-    <ClInclude Include="Engine\d3dx12.h" />
-    <ClInclude Include="Engine\DescriptorHeap.h" />
-    <ClInclude Include="Engine\DXR_ACS.h" />
-    <ClInclude Include="Engine\DXR_ACS_BOT.h" />
-    <ClInclude Include="Engine\DXR_ACS_OBJ.h" />
-    <ClInclude Include="Engine\DXR_ACS_TOP.h" />
-    <ClInclude Include="Engine\DXR_PipelineState.h" />
-    <ClInclude Include="Engine\DXR_RootSignature.h" />
-    <ClInclude Include="Engine\DXR_ShaderTable.h" />
-    <ClInclude Include="Engine\Fence.h" />
-    <ClInclude Include="Engine\Framework.h" />
-    <ClInclude Include="Engine\GraphicsDevice.h" />
-    <ClInclude Include="Engine\IndexBuffer.h" />
-    <ClInclude Include="Engine\PipelineState.h" />
-    <ClInclude Include="Engine\RenderTarget.h" />
-    <ClInclude Include="Engine\RootParameter.h" />
-    <ClInclude Include="Engine\RootSignature.h" />
-    <ClInclude Include="Engine\Sampler.h" />
-    <ClInclude Include="Engine\Shader.h" />
-    <ClInclude Include="Engine\SwapChain.h" />
-    <ClInclude Include="Engine\Texture2D.h" />
-    <ClInclude Include="Engine\VertexBuffer.h" />
-    <ClInclude Include="Engine\Window.h" />
-    <ClInclude Include="Events.h" />
-    <ClInclude Include="GLM\glm\glm.hpp" />
-    <ClInclude Include="GLM\glm\gtx\euler_angles.hpp" />
-    <ClInclude Include="GLM\glm\gtx\transform.hpp" />
-    <ClInclude Include="happly.h" />
-    <ClInclude Include="Resource.h" />
-    <ClInclude Include="targetver.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="D3D12_Engine_Test.cpp" />
-    <ClCompile Include="Engine\Buffer.cpp" />
-    <ClCompile Include="Engine\CommandAllocator.cpp" />
-    <ClCompile Include="Engine\CommandList.cpp" />
-    <ClCompile Include="Engine\CommandQueue.cpp" />
-    <ClCompile Include="Engine\ConstantBuffer.cpp" />
-    <ClCompile Include="Engine\ContentManager.cpp" />
-    <ClCompile Include="Engine\DescriptorHeap.cpp" />
-    <ClCompile Include="Engine\DXR_ACS.cpp" />
-    <ClCompile Include="Engine\DXR_ACS_BOT.cpp" />
-    <ClCompile Include="Engine\DXR_ACS_OBJ.cpp" />
-    <ClCompile Include="Engine\DXR_ACS_TOP.cpp" />
-    <ClCompile Include="Engine\DXR_PipelineState.cpp" />
-    <ClCompile Include="Engine\DXR_RootSignature.cpp" />
-    <ClCompile Include="Engine\DXR_ShaderTable.cpp" />
-    <ClCompile Include="Engine\Fence.cpp" />
-    <ClCompile Include="Engine\Framework.cpp" />
-    <ClCompile Include="Engine\GraphicsDevice.cpp" />
-    <ClCompile Include="Engine\IndexBuffer.cpp" />
-    <ClCompile Include="Engine\PipelineState.cpp" />
-    <ClCompile Include="Engine\RenderTarget.cpp" />
-    <ClCompile Include="Engine\RootParameter.cpp" />
-    <ClCompile Include="Engine\RootSignature.cpp" />
-    <ClCompile Include="Engine\Sampler.cpp" />
-    <ClCompile Include="Engine\Shader.cpp" />
-    <ClCompile Include="Engine\SwapChain.cpp" />
-    <ClCompile Include="Engine\Texture2D.cpp" />
-    <ClCompile Include="Engine\VertexBuffer.cpp" />
-    <ClCompile Include="Engine\Window.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ResourceCompile Include="D3D12_Engine_Test.rc" />
-  </ItemGroup>
   <ItemGroup>
     <Image Include="braynzar.jpg" />
     <Image Include="D3D12_Engine_Test.ico" />
     <Image Include="small.ico" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="BilateralFilter_vertical.hlsl">
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Compute</ShaderType>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">4.0</ShaderModel>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Compute</ShaderType>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">4.0</ShaderModel>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Compute</ShaderType>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">4.0</ShaderModel>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Compute</ShaderType>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">4.0</ShaderModel>
+    <None Include="Shaders\BilateralFilter_vertical.hlsl">
       <FileType>Document</FileType>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="BilateralFilter.hlsl">
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Compute</ShaderType>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">4.0</ShaderModel>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Compute</ShaderType>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">4.0</ShaderModel>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Compute</ShaderType>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">4.0</ShaderModel>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Compute</ShaderType>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">4.0</ShaderModel>
+    <None Include="Shaders\DXR_Shader_AO.hlsl">
       <FileType>Document</FileType>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="DXR_Shader.hlsl">
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+    <None Include="Shaders\PixelShader.hlsl">
       <FileType>Document</FileType>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="DXR_Shader_AO.hlsl">
+    <None Include="Shaders\TemporalSampling.hlsl">
       <FileType>Document</FileType>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <FxCompile Include="PixelShader.hlsl">
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">4.0</ShaderModel>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">4.0</ShaderModel>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
-    </FxCompile>
-    <None Include="TemporalSampling.hlsl">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Compute</ShaderType>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">6.0</ShaderModel>
+    <None Include="Shaders\VertexShader.hlsl">
       <FileType>Document</FileType>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <FxCompile Include="VertexShader.hlsl">
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">4.0</ShaderModel>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">4.0</ShaderModel>
-    </FxCompile>
+    <None Include="Shaders\BilateralFilter.hlsl">
+      <FileType>Document</FileType>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Shaders\DXR_Shader.hlsl">
+      <FileType>Document</FileType>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src\D3D12_Engine_Test.cpp" />
+    <ClCompile Include="Engine\buffer\Buffer.cpp" />
+    <ClCompile Include="Engine\buffer\ConstantBuffer.cpp" />
+    <ClCompile Include="Engine\buffer\IndexBuffer.cpp" />
+    <ClCompile Include="Engine\buffer\VertexBuffer.cpp" />
+    <ClCompile Include="Engine\command\CommandAllocator.cpp" />
+    <ClCompile Include="Engine\command\CommandList.cpp" />
+    <ClCompile Include="Engine\command\CommandQueue.cpp" />
+    <ClCompile Include="Engine\ContentManager.cpp" />
+    <ClCompile Include="Engine\DescriptorHeap.cpp" />
+    <ClCompile Include="Engine\display\Monitor.cpp" />
+    <ClCompile Include="Engine\display\Window.cpp" />
+    <ClCompile Include="Engine\dxr\acs\DXR_ACS.cpp" />
+    <ClCompile Include="Engine\dxr\acs\DXR_ACS_BOT.cpp" />
+    <ClCompile Include="Engine\dxr\acs\DXR_ACS_OBJ.cpp" />
+    <ClCompile Include="Engine\dxr\acs\DXR_ACS_TOP.cpp" />
+    <ClCompile Include="Engine\dxr\DXR_PipelineState.cpp" />
+    <ClCompile Include="Engine\dxr\DXR_RootSignature.cpp" />
+    <ClCompile Include="Engine\dxr\DXR_ShaderTable.cpp" />
+    <ClCompile Include="Engine\Fence.cpp" />
+    <ClCompile Include="Engine\GraphicsDevice.cpp" />
+    <ClCompile Include="Engine\shader\PipelineState.cpp" />
+    <ClCompile Include="Engine\shader\RootParameter.cpp" />
+    <ClCompile Include="Engine\shader\RootSignature.cpp" />
+    <ClCompile Include="Engine\shader\Sampler.cpp" />
+    <ClCompile Include="Engine\shader\Shader.cpp" />
+    <ClCompile Include="Engine\SwapChain.cpp" />
+    <ClCompile Include="Engine\texture\RenderTarget.cpp" />
+    <ClCompile Include="Engine\texture\Texture1D.cpp" />
+    <ClCompile Include="Engine\texture\Texture2D.cpp" />
+    <ClCompile Include="Engine\texture\Texture3D.cpp" />
+    <ClCompile Include="include\Framework.cpp" />
+    <ClCompile Include="include\ImGui\imgui.cpp" />
+    <ClCompile Include="include\ImGui\imgui_demo.cpp" />
+    <ClCompile Include="include\ImGui\imgui_draw.cpp" />
+    <ClCompile Include="include\ImGui\imgui_impl_dx12.cpp" />
+    <ClCompile Include="include\ImGui\imgui_impl_win32.cpp" />
+    <ClCompile Include="include\ImGui\imgui_stdlib.cpp" />
+    <ClCompile Include="include\ImGui\imgui_tables.cpp" />
+    <ClCompile Include="include\ImGui\imgui_widgets.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="D3D12_Engine.h" />
+    <ClInclude Include="src\D3D12_Engine_Test.h" />
+    <ClInclude Include="Engine\buffer\Buffer.h" />
+    <ClInclude Include="Engine\buffer\ConstantBuffer.h" />
+    <ClInclude Include="Engine\buffer\IndexBuffer.h" />
+    <ClInclude Include="Engine\buffer\VertexBuffer.h" />
+    <ClInclude Include="Engine\command\CommandAllocator.h" />
+    <ClInclude Include="Engine\command\CommandList.h" />
+    <ClInclude Include="Engine\command\CommandQueue.h" />
+    <ClInclude Include="Engine\ContentManager.h" />
+    <ClInclude Include="Engine\DescriptorHeap.h" />
+    <ClInclude Include="Engine\display\Monitor.h" />
+    <ClInclude Include="Engine\display\Window.h" />
+    <ClInclude Include="Engine\dxr\acs\DXR_ACS.h" />
+    <ClInclude Include="Engine\dxr\acs\DXR_ACS_BOT.h" />
+    <ClInclude Include="Engine\dxr\acs\DXR_ACS_OBJ.h" />
+    <ClInclude Include="Engine\dxr\acs\DXR_ACS_TOP.h" />
+    <ClInclude Include="Engine\dxr\DXR_PipelineState.h" />
+    <ClInclude Include="Engine\dxr\DXR_RootSignature.h" />
+    <ClInclude Include="Engine\dxr\DXR_ShaderTable.h" />
+    <ClInclude Include="Engine\Fence.h" />
+    <ClInclude Include="Engine\GraphicsDevice.h" />
+    <ClInclude Include="Engine\shader\PipelineState.h" />
+    <ClInclude Include="Engine\shader\RootParameter.h" />
+    <ClInclude Include="Engine\shader\RootSignature.h" />
+    <ClInclude Include="Engine\shader\Sampler.h" />
+    <ClInclude Include="Engine\shader\Shader.h" />
+    <ClInclude Include="Engine\SwapChain.h" />
+    <ClInclude Include="Engine\texture\RenderTarget.h" />
+    <ClInclude Include="Engine\texture\Texture1D.h" />
+    <ClInclude Include="Engine\texture\Texture2D.h" />
+    <ClInclude Include="Engine\texture\Texture3D.h" />
+    <ClInclude Include="include\d3dx12.h" />
+    <ClInclude Include="include\dxcapi.use.h" />
+    <ClInclude Include="include\Events.h" />
+    <ClInclude Include="include\Framework.h" />
+    <ClInclude Include="include\ImGui\imconfig.h" />
+    <ClInclude Include="include\ImGui\imgui.h" />
+    <ClInclude Include="include\ImGui\imgui_impl_dx12.h" />
+    <ClInclude Include="include\ImGui\imgui_impl_win32.h" />
+    <ClInclude Include="include\ImGui\imgui_internal.h" />
+    <ClInclude Include="include\ImGui\imgui_stdlib.h" />
+    <ClInclude Include="include\ImGui\imstb_rectpack.h" />
+    <ClInclude Include="include\ImGui\imstb_textedit.h" />
+    <ClInclude Include="include\ImGui\imstb_truetype.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="dxcompiler.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="dxil.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

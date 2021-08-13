@@ -1,6 +1,6 @@
 #include "ContentManager.h"
 #include <wincodec.h>
-#include "Texture2D.h"
+#include "texture/Texture2D.h"
 #include "GraphicsDevice.h"
 #include "DescriptorHeap.h"
 
@@ -36,7 +36,7 @@ Texture2D* ContentManager::LoadTexture2D(GraphicsDevice* graphicsdevice, LPCWSTR
 	Texture2D* newtex = new Texture2D(L"Test");
 	newtex->Create(graphicsdevice, textureDesc);
 	newtex->SetData(graphicsdevice, imageData, imageSize, heap, heapindex);
-	
+	return newtex;
 }
 
 
@@ -132,6 +132,7 @@ int GetDXGIFormatBitsPerPixel(DXGI_FORMAT& dxgiFormat)
 	else if (dxgiFormat == DXGI_FORMAT_R16_UNORM) return 16;
 	else if (dxgiFormat == DXGI_FORMAT_R8_UNORM) return 8;
 	else if (dxgiFormat == DXGI_FORMAT_A8_UNORM) return 8;
+	return 0;
 }
 
 // load and decode image from file

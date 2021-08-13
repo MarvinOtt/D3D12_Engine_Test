@@ -1,6 +1,7 @@
 #include "GraphicsDevice.h"
 #include "SwapChain.h"
-#include "CommandQueue.h"
+#include "command/CommandQueue.h"
+#include "../include/Framework.h"
 
 SwapChain::SwapChain()
 {
